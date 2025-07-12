@@ -20,15 +20,18 @@ const useAuthStore = create((set) => ({
       set({ isLoading: false });
     }
   },
+
   googleLogin: async (googleToken) => {
+    console.log(googleToken);
     set({ isLoading: true });
     try {
       const res = await api.post("/auth/google", { token: googleToken });
       const { user, token } = res.data;
+      console.log(token, res);
       localStorage.setItem("token", token);
       set({ user, token, isLoggedIn: true });
     } catch (err) {
-      console.error("Google login failed:", err?.response?.data?.error);
+      console.error("Google login failed:", err);
     } finally {
       set({ isLoading: false });
     }
@@ -38,6 +41,7 @@ const useAuthStore = create((set) => ({
     set({ isLoading: true });
     try {
       const res = await api.post("/auth/register", formData);
+      console.log(res);
       const { user, token } = res.data;
       localStorage.setItem("token", token);
       set({ user, token, isLoggedIn: true });

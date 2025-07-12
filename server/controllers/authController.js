@@ -1,7 +1,9 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// console.log(client);
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: "7d",
@@ -11,8 +13,8 @@ const generateToken = (userId) => {
 // @desc    Register user
 // @route   POST /api/auth/register
 exports.registerUser = async (req, res) => {
-  const { email, password } = req.body;
-
+  const { name, username, email, password } = req.body;
+  console.log(email, password);
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser)
@@ -21,6 +23,8 @@ exports.registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
+      name,
+      username,
       email,
       password: hashedPassword,
     });
@@ -45,7 +49,7 @@ exports.registerUser = async (req, res) => {
 // @route   POST /api/auth/login
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
-
+  console.log(email, password);
   try {
     const user = await User.findOne({ email });
     if (!user)
@@ -75,7 +79,6 @@ exports.loginUser = async (req, res) => {
 // @route   POST /api/auth/google
 exports.googleLogin = async (req, res) => {
   const { token } = req.body;
-
   try {
     const ticket = await client.verifyIdToken({
       idToken: token,
@@ -93,7 +96,7 @@ exports.googleLogin = async (req, res) => {
         email,
         avatar: picture,
         username: email.split("@")[0],
-        password: "google-auth", // placeholder; not used
+        password: "google-auth",
       });
     }
 
