@@ -20,6 +20,19 @@ const useAuthStore = create((set) => ({
       set({ isLoading: false });
     }
   },
+  googleLogin: async (googleToken) => {
+    set({ isLoading: true });
+    try {
+      const res = await api.post("/auth/google", { token: googleToken });
+      const { user, token } = res.data;
+      localStorage.setItem("token", token);
+      set({ user, token, isLoggedIn: true });
+    } catch (err) {
+      console.error("Google login failed:", err?.response?.data?.error);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
 
   register: async (formData) => {
     set({ isLoading: true });
