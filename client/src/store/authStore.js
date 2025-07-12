@@ -36,6 +36,7 @@ const useAuthStore = create((set) => ({
   },
 
   register: async (formData) => {
+    console.log(formData)
     set({ isLoading: true });
     try {
       const res = await api.post("/auth/register", formData);

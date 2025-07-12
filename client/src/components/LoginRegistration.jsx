@@ -3,6 +3,7 @@ import { Mail, Lock, User, Upload, X, Eye, EyeOff } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
 import useAuthStore from "../store/authStore";
 // Google Logo Component
+
 const GoogleIcon = () => (
   <svg
     width="20"
@@ -102,12 +103,12 @@ const Login = ({ isOpen, onClose }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  const login=useAuthStore(s=>s.login)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await useAuthStore.login(formData);
+     login(formData);
       onClose();
     } catch (error) {
       console.error("Login error:", error);
@@ -214,6 +215,7 @@ const Register = ({ isOpen, onClose }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
+  const register = useAuthStore((s) => s.register);
 
   const handleSubmit = async () => {
     if (formData.password !== formData.confirmPassword) {
@@ -230,7 +232,7 @@ const Register = ({ isOpen, onClose }) => {
         submitData.append("profileImage", formData.profileImage);
       }
 
-      await useAuthStore.register(submitData);
+      register(formData);
       onClose();
     } catch (error) {
       console.error("Register error:", error);
@@ -381,14 +383,14 @@ const LoginRegistration = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
+  const googleLogin=useAuthStore(s=>s.googleLogin);
   const handleGoogleSignUp = async () => {
     setIsLoading(true);
     try {
       // In a real app, you would integrate with Google OAuth
       // For now, we'll simulate the process
       const mockGoogleToken = "mock-google-token";
-      await useAuthStore.googleLogin(mockGoogleToken);
+      googleLogin(mockGoogleToken);
       console.log("Google sign up successful");
     } catch (error) {
       console.error("Google sign up error:", error);
@@ -428,7 +430,7 @@ const LoginRegistration = () => {
                 try {
                   setIsLoading(true);
                   const googleToken = credentialResponse.credential;
-                  console.log(googleToken)
+                  console.log(googleToken);
                   await useAuthStore.getState().googleLogin(googleToken);
                   console.log("Google sign up successful");
                 } catch (error) {
