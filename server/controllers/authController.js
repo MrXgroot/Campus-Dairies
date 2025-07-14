@@ -121,8 +121,14 @@ exports.googleLogin = async (req, res) => {
 // @route   GET /api/auth/me
 // @access  Private
 exports.getMe = async (req, res) => {
+  console.log("called");
+  const user = req.user;
+  if (!user) {
+    return res.status(400).json({ error: "No user logged in" });
+  }
+  const id = user.id;
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(id).select("-password");
     if (!user) return res.status(404).json({ error: "User not found" });
 
     res.status(200).json(user);

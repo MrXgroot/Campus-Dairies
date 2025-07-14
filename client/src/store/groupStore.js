@@ -1,46 +1,83 @@
 import { create } from "zustand";
 import api from "../utils/api";
 
-const useGroupStore = create((set) => ({
+const useGroupStore = create((set, get) => ({
   groups: [],
-  activeGroup: null,
+  joinedGroups: [],
+  otherGroups: [],
+  groupDetails: null,
   groupPosts: [],
-  groupStats: {},
   loading: false,
 
+  // Fetch all groups
   fetchGroups: async () => {
     try {
+      set({ loading: true });
       const res = await api.get("/groups");
-      set({ groups: res.data });
+      const all = res.data;
+
+      const joined = all.filter((g) => g.isJoined);
+      const others = all.filter((g) => !g.isJoined);
+
+      set({ groups: all, joinedGroups: joined, otherGroups: others });
     } catch (err) {
-      console.error("Failed to load groups:", err);
+      console.error("Fetch groups failed:", err);
+    } finally {
+      set({ loading: false });
     }
   },
 
+  // Join a group
   joinGroup: async (groupId) => {
     try {
       await api.post(`/groups/${groupId}/join`);
-      // Optional: refetch groups or update UI
+      get().fetchGroups(); // Refresh groups
     } catch (err) {
-      console.error("Join failed:", err);
+      console.error("Join group failed:", err);
     }
   },
 
-  selectGroup: async (groupId) => {
+  // Create a group
+  createGroup: async (groupData) => {
     try {
-      const [groupRes, postsRes, statsRes] = await Promise.all([
-        api.get(`/groups/${groupId}`),
-        api.get(`/posts/group/${groupId}`),
-        api.get(`/groups/${groupId}/stats`),
-      ]);
-      set({
-        activeGroup: groupRes.data,
-        groupPosts: postsRes.data,
-        groupStats: statsRes.data,
-      });
+      await api.post("/groups/create", groupData);
+      get().fetchGroups();
     } catch (err) {
-      console.error("Select group failed:", err);
+      console.error("Create group failed:", err);
     }
+  },
+
+  // Fetch full group details (admin, members, stats)
+  fetchGroupDetails: async (groupId) => {
+    try {
+      const res = await api.get(`/groups/${groupId}`);
+      set({ groupDetails: res.data });
+    } catch (err) {
+      console.error("Fetch group details failed:", err);
+    }
+  },
+
+  // Fetch posts from a private group
+  fetchGroupPosts: async (groupId) => {
+    try {
+      const res = await api.get(`/posts/group/${groupId}`);
+      set({ groupPosts: res.data });
+    } catch (err) {
+      console.error("Fetch group posts failed:", err);
+    }
+  },
+
+  leaveGroup: async (groupId) => {
+    try {
+      await api.post(`/groups/${groupId}/leave`);
+      get().fetchGroups(); // Refresh after leaving
+    } catch (err) {
+      console.error("Leave group failed:", err);
+    }
+  },
+
+  clearGroupData: () => {
+    set({ groupDetails: null, groupPosts: [] });
   },
 }));
 

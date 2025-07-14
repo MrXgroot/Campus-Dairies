@@ -53,6 +53,7 @@ const useAuthStore = create((set) => ({
   },
 
   fetchUser: async () => {
+    console.log("fuck");
     try {
       const res = await api.get("/auth/me");
       set({ user: res.data, isLoggedIn: true });
