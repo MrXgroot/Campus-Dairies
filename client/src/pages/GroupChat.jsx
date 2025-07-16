@@ -28,9 +28,11 @@ import {
   ThumbsDown,
   CheckCircle,
 } from "lucide-react";
-
+import { useParams, useNavigate } from "react-router-dom";
 import PostCard from "../components/post/PostCard";
-
+import PostModal from "../components/postModal/PostModal";
+import useGroupStore from "../store/groupStore";
+import usePostStore from "../store/postStore";
 // Mock data
 const mockGroupData = {
   _id: "g001",
@@ -120,63 +122,139 @@ const mockGroupData = {
 const mockPosts = [
   {
     _id: "1",
-    username: "tech_explorer",
-    avatar:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-    imageUrl:
-      "https://images.unsplash.com/photo-1518085901-5f5f2a75e5e5?w=800&h=600&fit=crop",
     caption:
       "Beautiful sunset from my coding session today! 🌅 #coding #nature #productivity",
-    likes: 234,
-    comments: 42,
-    timestamp: "2h ago",
-    verified: true,
-    category: "tech",
+    comments: [],
+    createdAt: "2025-07-15T14:00:00.000Z",
+    updatedAt: "2025-07-15T14:00:00.000Z",
+    createdBy: {
+      _id: "user1",
+      username: "tech_explorer",
+      avatar:
+        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
+      isVerified: true,
+    },
+    groupId: "public",
+    isHearted: false,
+    isLaughed: false,
+    isWaved: false,
+    mediaUrl:
+      "https://images.unsplash.com/photo-1518085901-5f5f2a75e5e5?w=800&h=600&fit=crop",
+    mood: "❤️",
+    reactions: {
+      hearts: [],
+      waves: [],
+      laughs: [],
+    },
+    taggedUsers: [],
+    totalHearts: 234,
+    totalLaughs: 0,
+    totalWaves: 0,
+    type: "image",
+    verified: false,
+    __v: 1,
   },
   {
     _id: "2",
-    username: "creative_mind",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108755-2616b332b1b4?w=100&h=100&fit=crop&crop=face",
-    imageUrl:
-      "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=800&h=600&fit=crop",
     caption:
       "New artwork in progress! What do you think? 🎨 #art #creativity #design",
-    likes: 567,
-    comments: 89,
-    timestamp: "4h ago",
+    comments: [],
+    createdAt: "2025-07-15T12:00:00.000Z",
+    updatedAt: "2025-07-15T12:00:00.000Z",
+    createdBy: {
+      _id: "user2",
+      username: "creative_mind",
+      avatar:
+        "https://images.unsplash.com/photo-1494790108755-2616b332b1b4?w=100&h=100&fit=crop&crop=face",
+      isVerified: false,
+    },
+    groupId: "public",
+    isHearted: false,
+    isLaughed: false,
+    isWaved: false,
+    mediaUrl:
+      "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=800&h=600&fit=crop",
+    mood: "🎨",
+    reactions: {
+      hearts: [],
+      waves: [],
+      laughs: [],
+    },
+    taggedUsers: [],
+    totalHearts: 567,
+    totalLaughs: 0,
+    totalWaves: 0,
+    type: "image",
     verified: false,
-    category: "art",
+    __v: 1,
   },
   {
     _id: "3",
-    username: "food_enthusiast",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-    imageUrl:
-      "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800&h=600&fit=crop",
     caption:
       "Homemade pasta night! Recipe in comments 🍝 #cooking #homemade #delicious",
-    likes: 892,
-    comments: 156,
-    timestamp: "6h ago",
-    verified: true,
-    category: "food",
+    comments: [],
+    createdAt: "2025-07-15T10:00:00.000Z",
+    updatedAt: "2025-07-15T10:00:00.000Z",
+    createdBy: {
+      _id: "user3",
+      username: "food_enthusiast",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
+      isVerified: true,
+    },
+    groupId: "public",
+    isHearted: false,
+    isLaughed: false,
+    isWaved: false,
+    mediaUrl:
+      "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800&h=600&fit=crop",
+    mood: "🍝",
+    reactions: {
+      hearts: [],
+      waves: [],
+      laughs: [],
+    },
+    taggedUsers: [],
+    totalHearts: 892,
+    totalLaughs: 0,
+    totalWaves: 0,
+    type: "image",
+    verified: false,
+    __v: 1,
   },
   {
     _id: "4",
-    username: "travel_diary",
-    avatar:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-    imageUrl:
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
     caption:
       "Mountain hiking adventure! The view was absolutely breathtaking 🏔️ #travel #hiking #mountains",
-    likes: 1234,
-    comments: 278,
-    timestamp: "1d ago",
+    comments: [],
+    createdAt: "2025-07-14T14:00:00.000Z",
+    updatedAt: "2025-07-14T14:00:00.000Z",
+    createdBy: {
+      _id: "user4",
+      username: "travel_diary",
+      avatar:
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+      isVerified: false,
+    },
+    groupId: "public",
+    isHearted: false,
+    isLaughed: false,
+    isWaved: false,
+    mediaUrl:
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
+    mood: "🏔️",
+    reactions: {
+      hearts: [],
+      waves: [],
+      laughs: [],
+    },
+    taggedUsers: [],
+    totalHearts: 1234,
+    totalLaughs: 0,
+    totalWaves: 0,
+    type: "image",
     verified: false,
-    category: "travel",
+    __v: 1,
   },
 ];
 
@@ -290,7 +368,7 @@ const CreatePostModal = ({ isOpen, onClose, onCreatePost }) => {
                   : "bg-gray-800 text-gray-300 hover:bg-gray-700"
               }`}
             >
-              <Image className="w-4 h-4" />
+              {/* <Image className="w-4 h-4" /> */}
               Photo
             </button>
             <button
@@ -443,71 +521,47 @@ const CommentModal = ({ isOpen, onClose, post, onAddComment }) => {
 };
 
 const GroupChatPage = () => {
-  const [group] = useState(mockGroupData);
-  const [posts, setPosts] = useState(mockPosts);
+  // const [posts, setPosts] = useState(mockPosts);
   const [activeTab, setActiveTab] = useState("posts");
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showGroupDetails, setShowGroupDetails] = useState(false);
+  const navigate = useNavigate();
+  const { id } = useParams();
+  // console.log(id);
+  const groupDetails = useGroupStore((state) => state.groupDetails);
+  const fetchGroupById = useGroupStore((state) => state.fetchGroupById);
+  const loading = useGroupStore((state) => state.loading);
 
-  const handleCreatePost = (postData) => {
-    const newPost = {
-      _id: `p${Date.now()}`,
-      ...postData,
-      createdBy: {
-        _id: "u001",
-        name: "Sukesh Kumar",
-        avatar:
-          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-      },
-      createdAt: new Date().toISOString(),
-      reactions: { hearts: [], waves: [] },
-      comments: [],
-      group: { _id: group._id, name: group.name },
-    };
-    setPosts([newPost, ...posts]);
+  const fetchGroupPosts = usePostStore((state) => state.fetchGroupPosts);
+  const groupPosts = usePostStore((state) => state.groupPosts);
+
+  useEffect(() => {
+    fetchGroupById(id);
+    fetchGroupPosts(id);
+  }, []);
+
+  const handleCreatePost = (postData) => {};
+  console.log(groupDetails);
+
+  const handleReact = (postId, reactionType) => {};
+
+  const handleBackButton = () => {
+    navigate("/groups");
   };
 
-  const handleReact = (postId, reactionType) => {
-    setPosts(
-      posts.map((post) => {
-        if (post._id === postId) {
-          const reactions = { ...post.reactions };
-          if (reactions[reactionType].includes("u001")) {
-            reactions[reactionType] = reactions[reactionType].filter(
-              (id) => id !== "u001"
-            );
-          } else {
-            reactions[reactionType] = [...reactions[reactionType], "u001"];
-          }
-          return { ...post, reactions };
-        }
-        return post;
-      })
+  const handleComment = (postId, commentText) => {};
+
+  console.log(loading);
+  if (loading || !groupDetails) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="flex items-center gap-2 text-white">
+          <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-sm">Loading...</span>
+        </div>
+      </div>
     );
-  };
-  const handleBackButton = () => {};
-
-  const handleComment = (postId, commentText) => {
-    setPosts(
-      posts.map((post) => {
-        if (post._id === postId) {
-          const newComment = {
-            _id: `c${Date.now()}`,
-            text: commentText,
-            createdBy: {
-              _id: "u001",
-              name: "Sukesh Kumar",
-              avatar:
-                "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-            },
-            createdAt: new Date().toISOString(),
-          };
-          return { ...post, comments: [...post.comments, newComment] };
-        }
-        return post;
-      })
-    );
-  };
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-black text-white">
@@ -522,14 +576,16 @@ const GroupChatPage = () => {
               <ArrowLeft className="w-5 h-5 text-white" />
             </button>
             <img
-              src={group.avatar}
-              alt={group.name}
+              src={groupDetails.groupImage}
+              alt={groupDetails.name}
               className="w-8 h-8 rounded-full object-cover"
             />
             <div>
-              <h1 className="text-lg font-semibold text-white">{group.name}</h1>
+              <h1 className="text-lg font-semibold text-white">
+                {groupDetails.name}
+              </h1>
               <p className="text-gray-400 text-sm">
-                {group.stats.totalMembers} members
+                {groupDetails.stats.totalMembers} members
               </p>
             </div>
           </div>
@@ -557,7 +613,7 @@ const GroupChatPage = () => {
               : "text-gray-400 hover:text-gray-300"
           }`}
         >
-          Posts ({posts.length})
+          Posts ({groupPosts.length})
         </button>
         <button
           onClick={() => setActiveTab("members")}
@@ -567,7 +623,7 @@ const GroupChatPage = () => {
               : "text-gray-400 hover:text-gray-300"
           }`}
         >
-          Members ({group.stats.totalMembers})
+          Members ({groupDetails.stats.totalMembers})
         </button>
         <button
           onClick={() => setActiveTab("about")}
@@ -585,7 +641,7 @@ const GroupChatPage = () => {
       <div className="pb-6">
         {activeTab === "posts" && (
           <div className="space-y-4  py-3">
-            {posts.length === 0 ? (
+            {groupPosts.length === 0 ? (
               <div className="text-center py-20">
                 <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-white mb-2">
@@ -602,7 +658,7 @@ const GroupChatPage = () => {
                 </button>
               </div>
             ) : (
-              posts.map((post) => (
+              groupPosts.map((post) => (
                 <PostCard
                   key={post._id}
                   post={post}
@@ -621,40 +677,43 @@ const GroupChatPage = () => {
                 Top Contributors
               </h3>
               <div className="space-y-3">
-                {group.stats.topContributors.map((contributor, index) => (
-                  <div
-                    key={contributor._id}
-                    className="flex items-center justify-between p-3 bg-gray-900 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <img
-                          src={contributor.avatar}
-                          alt={contributor.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        {index === 0 && (
-                          <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
-                            <Crown className="w-3 h-3 text-yellow-900" />
+                {groupDetails.stats?.topContributors &&
+                  groupDetails.stats.topContributors.map(
+                    (contributor, index) => (
+                      <div
+                        key={contributor._id}
+                        className="flex items-center justify-between p-3 bg-gray-900 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <img
+                              src={contributor.avatar}
+                              alt={contributor.name}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                            {index === 0 && (
+                              <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+                                <Crown className="w-3 h-3 text-yellow-900" />
+                              </div>
+                            )}
                           </div>
-                        )}
+                          <div>
+                            <p className="text-white font-medium">
+                              {contributor.name}
+                            </p>
+                            <p className="text-gray-400 text-sm">
+                              {contributor.count} posts
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-purple-400 font-semibold">
+                            #{index + 1}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-white font-medium">
-                          {contributor.name}
-                        </p>
-                        <p className="text-gray-400 text-sm">
-                          {contributor.count} posts
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-purple-400 font-semibold">
-                        #{index + 1}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                    )
+                  )}
               </div>
             </div>
 
@@ -662,248 +721,265 @@ const GroupChatPage = () => {
               <h3 className="text-lg font-semibold text-white mb-3">
                 All Members
               </h3>
-              <div className="space-y-2">
-                {group.members.map((member) => (
-                  <div
-                    key={member._id}
-                    className="flex items-center justify-between p-3 bg-gray-900 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={member.avatar}
-                        alt={member.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                      <div>
-                        <p className="text-white font-medium">{member.name}</p>
-                        <p className="text-gray-400 text-sm capitalize">
-                          {member.role}
-                        </p>
-                      </div>
-                    </div>
-                    {member.role === "admin" && (
-                      <div className="px-2 py-1 bg-purple-600 text-white text-xs rounded-full">
-                        Admin
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <ShowMembersModal group={groupDetails} />
             </div>
           </div>
         )}
 
-        {activeTab === "about" && (
-          <div className="p-4 space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-3">About</h3>
-              <p className="text-gray-300 leading-relaxed">
-                {group.description}
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-3">
-                Group Info
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-gray-900 rounded-lg">
-                  <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-                    {group.isPrivate ? (
-                      <Lock className="w-5 h-5 text-white" />
-                    ) : (
-                      <Globe className="w-5 h-5 text-white" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">
-                      {group.isPrivate ? "Private" : "Public"} Group
-                    </p>
-                    <p className="text-gray-400 text-sm">
-                      {group.isPrivate
-                        ? "Only members can see posts"
-                        : "Anyone can see posts"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-gray-900 rounded-lg">
-                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">Created</p>
-                    <p className="text-gray-400 text-sm">
-                      {new Date(group.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-gray-900 rounded-lg">
-                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">Location</p>
-                    <p className="text-gray-400 text-sm">{group.location}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-gray-900 rounded-lg">
-                  <img
-                    src={group.createdBy.avatar}
-                    alt={group.createdBy.name}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div>
-                    <p className="text-white font-medium">Created by</p>
-                    <p className="text-gray-400 text-sm">
-                      {group.createdBy.name}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-3">
-                Group Rules
-              </h3>
-              <div className="space-y-2">
-                <div className="p-3 bg-gray-900 rounded-lg">
-                  <p className="text-white text-sm">
-                    1. Be respectful to all members
-                  </p>
-                </div>
-                <div className="p-3 bg-gray-900 rounded-lg">
-                  <p className="text-white text-sm">
-                    2. No spam or promotional content
-                  </p>
-                </div>
-                <div className="p-3 bg-gray-900 rounded-lg">
-                  <p className="text-white text-sm">
-                    3. Keep posts relevant to the group
-                  </p>
-                </div>
-                <div className="p-3 bg-gray-900 rounded-lg">
-                  <p className="text-white text-sm">
-                    4. No inappropriate content
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {activeTab === "about" && <AboutGroupModal group={groupDetails} />}
       </div>
 
       {/* Group Details Modal */}
       {showGroupDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b border-gray-800 sticky top-0 bg-gray-900">
-              <button
-                onClick={() => setShowGroupDetails(false)}
-                className="p-2 hover:bg-gray-800 rounded-full"
-              >
-                <X className="w-5 h-5 text-white" />
-              </button>
-              <h2 className="text-lg font-semibold text-white">
-                Group Details
-              </h2>
-              <button className="p-2 hover:bg-gray-800 rounded-full">
-                <Settings className="w-5 h-5 text-white" />
-              </button>
-            </div>
-
-            <div className="p-4">
-              <div className="text-center mb-6">
-                <img
-                  src={group.avatar}
-                  alt={group.name}
-                  className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
-                />
-                <h3 className="text-xl font-bold text-white mb-2">
-                  {group.name}
-                </h3>
-                <p className="text-gray-400 text-sm mb-4">
-                  {group.description}
-                </p>
-                <div className="flex justify-center gap-6">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-white">
-                      {group.stats.totalMembers}
-                    </p>
-                    <p className="text-gray-400 text-sm">Members</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-white">
-                      {group.stats.totalPosts}
-                    </p>
-                    <p className="text-gray-400 text-sm">Posts</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-white">
-                      {group.stats.totalVideos}
-                    </p>
-                    <p className="text-gray-400 text-sm">Videos</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
-                  <Users className="w-5 h-5 text-purple-400" />
-                  <div>
-                    <p className="text-white font-medium">View Members</p>
-                    <p className="text-gray-400 text-sm">
-                      See all group members
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
-                  <UserPlus className="w-5 h-5 text-blue-400" />
-                  <div>
-                    <p className="text-white font-medium">Invite Members</p>
-                    <p className="text-gray-400 text-sm">
-                      Invite friends to join
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
-                  <FileText className="w-5 h-5 text-green-400" />
-                  <div>
-                    <p className="text-white font-medium">Group Rules</p>
-                    <p className="text-gray-400 text-sm">
-                      View group guidelines
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
-                  <Settings className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-white font-medium">Group Settings</p>
-                    <p className="text-gray-400 text-sm">
-                      Manage group preferences
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <GroupDetailsModal
+          group={groupDetails}
+          setShowGroupDetails={setShowGroupDetails}
+        />
       )}
 
       {/* Create Post Modal */}
-      <CreatePostModal
-        isOpen={showCreatePost}
-        onClose={() => setShowCreatePost(false)}
-        onCreatePost={handleCreatePost}
-      />
+      <PostModal show={showCreatePost} onClose={setShowCreatePost} id={id} />
     </div>
   );
 };
 
 export default GroupChatPage;
+
+const GroupDetailsModal = ({ group, setShowGroupDetails }) => {
+  console.log(group);
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 border-b border-gray-800 sticky top-0 bg-gray-900">
+          <button
+            onClick={() => setShowGroupDetails(false)}
+            className="p-2 hover:bg-gray-800 rounded-full"
+          >
+            <X className="w-5 h-5 text-white" />
+          </button>
+          <h2 className="text-lg font-semibold text-white">Group Details</h2>
+          <button className="p-2 hover:bg-gray-800 rounded-full">
+            <Settings className="w-5 h-5 text-white" />
+          </button>
+        </div>
+
+        <div className="p-4">
+          <div className="text-center mb-6">
+            <img
+              src={group.groupImage}
+              alt={group.name}
+              className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
+            />
+            <h3 className="text-xl font-bold text-white mb-2">{group.name}</h3>
+            <p className="text-gray-400 text-sm mb-4">{group.description}</p>
+            <div className="flex justify-center gap-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">
+                  {group.stats.totalMembers}
+                </p>
+                <p className="text-gray-400 text-sm">Members</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">
+                  {group.stats.totalPosts}
+                </p>
+                <p className="text-gray-400 text-sm">Posts</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-white">
+                  {group.stats.totalVideos}
+                </p>
+                <p className="text-gray-400 text-sm">Videos</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
+              <Users className="w-5 h-5 text-purple-400" />
+              <div>
+                <p className="text-white font-medium">View Members</p>
+                <p className="text-gray-400 text-sm">See all group members</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
+              <UserPlus className="w-5 h-5 text-blue-400" />
+              <div>
+                <p className="text-white font-medium">Invite Members</p>
+                <p className="text-gray-400 text-sm">Invite friends to join</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
+              <FileText className="w-5 h-5 text-green-400" />
+              <div>
+                <p className="text-white font-medium">Group Rules</p>
+                <p className="text-gray-400 text-sm">View group guidelines</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
+              <Settings className="w-5 h-5 text-gray-400" />
+              <div>
+                <p className="text-white font-medium">Group Settings</p>
+                <p className="text-gray-400 text-sm">
+                  Manage group preferences
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AboutGroupModal = ({ group }) => {
+  return (
+    <div className="p-4 space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold text-white mb-3">About</h3>
+        <p className="text-gray-300 leading-relaxed">{group.description}</p>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold text-white mb-3">Group Info</h3>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 p-3 bg-gray-900 rounded-lg">
+            <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+              {group.isPrivate ? (
+                <Lock className="w-5 h-5 text-white" />
+              ) : (
+                <Globe className="w-5 h-5 text-white" />
+              )}
+            </div>
+            <div>
+              <p className="text-white font-medium">
+                {group.isPrivate ? "Private" : "Public"} Group
+              </p>
+              <p className="text-gray-400 text-sm">
+                {group.isPrivate
+                  ? "Only members can see posts"
+                  : "Anyone can see posts"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 bg-gray-900 rounded-lg">
+            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+              <Calendar className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-white font-medium">Created</p>
+              <p className="text-gray-400 text-sm">
+                {new Date(group.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 bg-gray-900 rounded-lg">
+            <img
+              src={group.createdBy.avatar}
+              alt={group.createdBy.username}
+              className="w-10 h-10 rounded-full object-cover"
+            />
+            <div>
+              <p className="text-white font-medium">Created by</p>
+              <p className="text-gray-400 text-sm">
+                {group.createdBy.username}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold text-white mb-3">Group Rules</h3>
+        <div className="space-y-2">
+          <div className="p-3 bg-gray-900 rounded-lg">
+            <p className="text-white text-sm">
+              1. Be respectful to all members
+            </p>
+          </div>
+          <div className="p-3 bg-gray-900 rounded-lg">
+            <p className="text-white text-sm">
+              2. No spam or promotional content
+            </p>
+          </div>
+          <div className="p-3 bg-gray-900 rounded-lg">
+            <p className="text-white text-sm">
+              3. Keep posts relevant to the group
+            </p>
+          </div>
+          <div className="p-3 bg-gray-900 rounded-lg">
+            <p className="text-white text-sm">4. No inappropriate content</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+const ShowMembersModal = ({ group }) => {
+  // Combine all users and determine their roles
+  const renderMembers = () => {
+    const memberMap = new Map();
+
+    // Add moderators first (they may also be members)
+    group.moderators.forEach((mod) => {
+      memberMap.set(mod._id, { ...mod, role: "moderator" });
+    });
+
+    // Add members (don't override moderator role if already added)
+    group.members.forEach((mem) => {
+      if (!memberMap.has(mem._id)) {
+        memberMap.set(mem._id, { ...mem, role: "member" });
+      }
+    });
+
+    // Admin from createdBy
+    memberMap.set(group.createdBy._id, {
+      ...group.createdBy,
+      role: "admin",
+    });
+
+    // Remove duplicates and convert to array
+    return Array.from(memberMap.values());
+  };
+
+  const allMembers = renderMembers();
+
+  return (
+    <div className="space-y-2">
+      {allMembers.map((member) => (
+        <div
+          key={member._id}
+          className="flex items-center justify-between p-3 bg-gray-900 rounded-lg"
+        >
+          <div className="flex items-center gap-3">
+            <img
+              src={member.avatar}
+              alt={member.username}
+              referrerPolicy="no-referrer"
+              className="w-10 h-10 rounded-full object-cover"
+            />
+            <div>
+              <p className="text-white font-medium">{member.username}</p>
+              <p className="text-gray-400 text-sm capitalize">{member.role}</p>
+            </div>
+          </div>
+          {member.role === "admin" && (
+            <div className="px-2 py-1 bg-purple-600 text-white text-xs rounded-full">
+              Admin
+            </div>
+          )}
+          {member.role === "moderator" && (
+            <div className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
+              Moderator
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};

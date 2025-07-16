@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import Header from "../components/header/Header";
 import PostCard from "../components/post/PostCard";
 import PostModal from "../components/postModal/PostModal";
+import usePostStore from "../store/postStore";
+import { socket } from "../utils/socket";
 import {
   Heart,
   MessageCircle,
@@ -19,7 +21,7 @@ import {
   ThumbsDown,
   CheckCircle,
 } from "lucide-react";
-
+import useOnlineUserStore from "../store/onlineUserStore";
 const HomePage = () => {
   const [posts, setPosts] = useState([]);
   const [stories, setStories] = useState([]);
@@ -28,72 +30,7 @@ const HomePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const observerRef = useRef();
-
-  // Mock data for demonstration
-  const mockPosts = [
-    {
-      _id: "1",
-      username: "tech_explorer",
-      avatar:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-      imageUrl:
-        "https://images.unsplash.com/photo-1518085901-5f5f2a75e5e5?w=800&h=600&fit=crop",
-      caption:
-        "Beautiful sunset from my coding session today! 🌅 #coding #nature #productivity",
-      likes: 234,
-      comments: 42,
-      timestamp: "2h ago",
-      verified: true,
-      category: "tech",
-    },
-    {
-      _id: "2",
-      username: "creative_mind",
-      avatar:
-        "https://images.unsplash.com/photo-1494790108755-2616b332b1b4?w=100&h=100&fit=crop&crop=face",
-      imageUrl:
-        "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=800&h=600&fit=crop",
-      caption:
-        "New artwork in progress! What do you think? 🎨 #art #creativity #design",
-      likes: 567,
-      comments: 89,
-      timestamp: "4h ago",
-      verified: false,
-      category: "art",
-    },
-    {
-      _id: "3",
-      username: "food_enthusiast",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-      imageUrl:
-        "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800&h=600&fit=crop",
-      caption:
-        "Homemade pasta night! Recipe in comments 🍝 #cooking #homemade #delicious",
-      likes: 892,
-      comments: 156,
-      timestamp: "6h ago",
-      verified: true,
-      category: "food",
-    },
-    {
-      _id: "4",
-      username: "travel_diary",
-      avatar:
-        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-      imageUrl:
-        "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
-      caption:
-        "Mountain hiking adventure! The view was absolutely breathtaking 🏔️ #travel #hiking #mountains",
-      likes: 1234,
-      comments: 278,
-      timestamp: "1d ago",
-      verified: false,
-      category: "travel",
-    },
-  ];
 
   const mockStories = [
     {
@@ -136,24 +73,18 @@ const HomePage = () => {
 
   const filters = ["all", "tech", "art", "food", "travel"];
 
+  const { publicPosts, fetchPublicPosts, hasMore, loading, resetPagination } =
+    usePostStore();
+  const onlineUsers = useOnlineUserStore((state) => state.onlineUsers);
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setPosts(mockPosts);
-        setStories(mockStories);
-        setIsLoading(false);
-      }, 1000);
-    };
-
-    fetchData();
+    resetPagination();
+    fetchPublicPosts();
   }, []);
-
+  console.log(onlineUsers);
   const handleRefresh = async () => {
     setRefreshing(true);
     setTimeout(() => {
-      setPosts([...mockPosts]);
+      setPosts([...publicPosts]);
       setRefreshing(false);
     }, 1000);
   };
@@ -162,42 +93,27 @@ const HomePage = () => {
     const matchesFilter =
       selectedFilter === "all" || post.category === selectedFilter;
     const matchesSearch =
-      post.caption.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      post.username.toLowerCase().includes(searchTerm.toLowerCase());
+      publicPosts.caption.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      publicPosts.username.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
-
-  const loadMorePosts = () => {
-    if (hasMore) {
-      setTimeout(() => {
-        setPosts((prev) => [...prev, ...mockPosts]);
-        setHasMore(false);
-      }, 1000);
-    }
-  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading) {
-          loadMorePosts();
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          console.log("fetching");
+          fetchPublicPosts();
         }
       },
       { threshold: 1.0 }
     );
 
-    if (observerRef.current) {
-      observer.observe(observerRef.current);
-    }
+    if (observerRef.current) observer.observe(observerRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loading]);
 
-    return () => {
-      if (observerRef.current) {
-        observer.unobserve(observerRef.current);
-      }
-    };
-  }, [hasMore, isLoading]);
-
-  if (isLoading) {
+  if (loading) {
     return <LoadingScreen />;
   }
 
@@ -213,7 +129,7 @@ const HomePage = () => {
       />
 
       {/* Stories */}
-      <StoriesSection stories={stories} />
+      <StoriesSection stories={onlineUsers} />
 
       {/* Filters */}
       <FilterSection
@@ -224,7 +140,7 @@ const HomePage = () => {
 
       {/* Posts Feed */}
       <div className="max-w-md mx-auto pb-20">
-        {filteredPosts.map((post, index) => (
+        {publicPosts.map((post, index) => (
           <div
             key={post._id}
             className="opacity-0 animate-fade-in"
@@ -257,7 +173,7 @@ const HomePage = () => {
       {/* Floating Action Button */}
       <FloatingActionButton onClick={() => setShowCreatePost(true)} />
 
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -277,45 +193,48 @@ const HomePage = () => {
   );
 };
 
-const StoriesSection = ({ stories }) => (
-  <div className="max-w-md mx-auto px-4 py-4">
-    <div className="flex gap-4 overflow-x-auto scrollbar-hide">
-      {stories.map((story) => (
-        <div
-          key={story.id}
-          className="flex-shrink-0 text-center cursor-pointer hover:scale-105 transition-transform active:scale-95"
-        >
+const StoriesSection = ({ stories }) => {
+  return (
+    <div className="max-w-md mx-auto px-4 py-4">
+      <div className="flex gap-4 overflow-x-auto scrollbar-hide">
+        {stories.map((story) => (
           <div
-            className={`relative ${
-              story.isAdd
-                ? "bg-gray-200 dark:bg-gray-700"
-                : story.isViewed
-                ? "bg-gray-300"
-                : "bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500"
-            } p-1 rounded-full`}
+            key={story._id}
+            className="flex-shrink-0 text-center cursor-pointer hover:scale-105 transition-transform active:scale-95"
           >
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-white dark:bg-gray-800 p-0.5">
-              {story.isAdd ? (
-                <div className="w-full h-full bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                  <Plus className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-                </div>
-              ) : (
-                <img
-                  src={story.avatar}
-                  alt={story.username}
-                  className="w-full h-full object-cover rounded-full"
-                />
-              )}
+            <div
+              className={`relative ${
+                story.isAdd
+                  ? "bg-gray-200 dark:bg-gray-700"
+                  : story.isViewed
+                  ? "bg-gray-300"
+                  : "bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500"
+              } p-1 rounded-full`}
+            >
+              <div className="w-16 h-16 rounded-full overflow-hidden bg-white dark:bg-gray-800 p-0.5">
+                {story.isAdd ? (
+                  <div className="w-full h-full bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                    <Plus className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+                  </div>
+                ) : (
+                  <img
+                    src={story.avatar}
+                    referrerPolicy="no-refferer"
+                    alt={story.username}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                )}
+              </div>
             </div>
+            <p className="text-xs mt-1 text-gray-700 dark:text-gray-300 truncate w-16">
+              {story.username}
+            </p>
           </div>
-          <p className="text-xs mt-1 text-gray-700 dark:text-gray-300 truncate w-16">
-            {story.username}
-          </p>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const FilterSection = ({ filters, selectedFilter, setSelectedFilter }) => (
   <div className="max-w-md mx-auto px-4 py-2">
@@ -392,7 +311,7 @@ const FloatingActionButton = ({ onClick }) => (
 );
 
 const LoadingScreen = () => (
-  <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+  <div className="min-h-screen  bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
     <div className="text-center">
       <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4 animate-spin" />
       <p className="text-gray-600 dark:text-gray-300">Loading your feed...</p>

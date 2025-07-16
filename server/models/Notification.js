@@ -3,15 +3,56 @@ const Schema = mongoose.Schema;
 
 const notificationSchema = new Schema(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true }, // receiver
-    type: {
-      type: String,
-      enum: ["wave", "heart", "star", "comment", "tag"],
+    // Receiver of the notification
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
       required: true,
     },
-    message: { type: String, required: true },
-    fromUser: { type: Schema.Types.ObjectId, ref: "User" },
-    postId: { type: Schema.Types.ObjectId, ref: "Post" },
+
+    // Sender of the notification (can be null for system messages)
+    fromUser: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    // Notification type
+    type: {
+      type: String,
+      enum: [
+        "wave",
+        "heart",
+        "star",
+        "comment",
+        "tag",
+        "join-request",
+        "join-approved",
+      ],
+      required: true,
+    },
+
+    // Optional descriptive message
+    message: {
+      type: String,
+    },
+
+    // Optional reference to post
+    postId: {
+      type: Schema.Types.ObjectId,
+      ref: "Post",
+    },
+
+    // Optional reference to group (for join-related events)
+    groupId: {
+      type: Schema.Types.ObjectId,
+      ref: "Group",
+    },
+
+    // Whether user has read this notification
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

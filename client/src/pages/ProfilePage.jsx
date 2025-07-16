@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import useProfileStore from "../store/profileStore";
 import {
   LogOut,
   Camera,
@@ -166,9 +167,6 @@ const useVideoAutoPlay = () => {
 };
 
 export default function InstagramProfilePage() {
-  const [profile, setProfile] = useState(profileUser);
-  const [posts, setPosts] = useState(myPosts);
-  const [tagged, setTagged] = useState(taggedPosts);
   const [openMenu, setOpenMenu] = useState(null);
   const [activeTab, setActiveTab] = useState("posts");
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
@@ -178,6 +176,22 @@ export default function InstagramProfilePage() {
   const { registerVideo } = useVideoAutoPlay();
   const menuRef = useRef(null);
   const hamburgerMenuRef = useRef(null);
+
+  const profile = useProfileStore((state) => state.profile);
+  const loading = useProfileStore((state) => state.loading);
+  const fetchProfile = useProfileStore((state) => state.fetchProfile);
+  const posts = useProfileStore((state) => state.posts);
+  const tagged = useProfileStore((state) => state.tagged);
+  const fetchUploadedPosts = useProfileStore(
+    (state) => state.fetchUploadedPosts
+  );
+  const fetchTaggedPosts = useProfileStore((state) => state.fetchTaggedPosts);
+  useEffect(() => {
+    fetchProfile();
+    fetchUploadedPosts();
+    fetchTaggedPosts();
+  }, []);
+  console.log(posts);
 
   // Handle profile photo change
   const handleProfilePicChange = () => {
@@ -564,6 +578,13 @@ export default function InstagramProfilePage() {
     );
   };
 
+  if (loading) {
+    return (
+      <div className="h-10 flex justify-center items-center">
+        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       {/* Header */}
@@ -586,6 +607,7 @@ export default function InstagramProfilePage() {
             <div className="relative">
               <img
                 src={profile.avatar || "/placeholder.svg"}
+                referrerPolicy="no-referrer"
                 alt="Profile"
                 className="w-20 h-20 rounded-full object-cover"
               />
@@ -609,7 +631,7 @@ export default function InstagramProfilePage() {
             </div>
           </div>
           {/* Stats Section - Now inside profile container */}
-          <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+          {/* <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
             <div className="text-center">
               <div className="text-lg font-semibold text-gray-900 dark:text-white">
                 {profile.stats.totalPosts}
@@ -634,7 +656,7 @@ export default function InstagramProfilePage() {
                 Tagged
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Groups Section */}
@@ -643,14 +665,15 @@ export default function InstagramProfilePage() {
             Groups
           </h3>
           <div className="flex flex-wrap gap-2">
-            {profile.groups.map((group) => (
-              <span
-                key={group.id}
-                className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm"
-              >
-                {group.name}
-              </span>
-            ))}
+            {profile.groups.length > 0 &&
+              profile.groups.map((group) => (
+                <span
+                  key={group.id}
+                  className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm"
+                >
+                  {group.name}
+                </span>
+              ))}
           </div>
         </div>
 

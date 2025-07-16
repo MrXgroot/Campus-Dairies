@@ -26,6 +26,7 @@ const userSchema = new Schema(
 
     isOnline: { type: Boolean, default: false },
     lastActive: { type: Date, default: Date.now },
+    isVerified: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

@@ -587,6 +587,7 @@ export default function InstagramProfilePage() {
               <img
                 src={profile.avatar || "/placeholder.svg"}
                 alt="Profile"
+                referrerPolicy="no-referrer"
                 className="w-20 h-20 rounded-full object-cover"
               />
               <button

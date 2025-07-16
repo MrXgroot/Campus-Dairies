@@ -12,168 +12,11 @@ import {
   X,
   LogOut,
 } from "lucide-react";
-
+import { formatDateTime } from "../utils/formatDate.js";
 import Header from "../components/header/Header";
+import useGroupStore from "../store/groupStore";
+import { useNavigate } from "react-router-dom";
 // Mock Zustand store for demo
-const useGroupStore = () => {
-  const [state, setState] = useState({
-    groups: [],
-    joinedGroups: [],
-    otherGroups: [],
-    loading: false,
-  });
-
-  const fetchGroups = () => {
-    setState((prev) => ({ ...prev, loading: true }));
-
-    // Simulate API call
-    setTimeout(() => {
-      const allGroups = [
-        {
-          _id: "g001",
-          name: "MCA Batch 2024",
-          isPrivate: true,
-          avatar:
-            "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=200&h=200&fit=crop&crop=face",
-          createdBy: {
-            _id: "u001",
-            name: "Sukesh Kumar",
-            avatar:
-              "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-          },
-          totalMembers: 18,
-          isJoined: true,
-          lastActivity: "2h",
-        },
-        {
-          _id: "g002",
-          name: "Hostel A - Block 1",
-          isPrivate: true,
-          avatar:
-            "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=200&h=200&fit=crop&crop=face",
-          createdBy: {
-            _id: "u002",
-            name: "Divya Sharma",
-            avatar:
-              "https://images.unsplash.com/photo-1494790108755-2616b88c3f96?w=100&h=100&fit=crop&crop=face",
-          },
-          totalMembers: 25,
-          isJoined: true,
-          lastActivity: "5m",
-        },
-        {
-          _id: "g003",
-          name: "MSc Chemistry Lab",
-          isPrivate: true,
-          avatar:
-            "https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=200&h=200&fit=crop&crop=face",
-          createdBy: {
-            _id: "u003",
-            name: "Rahul Patel",
-            avatar:
-              "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-          },
-          totalMembers: 12,
-          isJoined: false,
-          lastActivity: "1d",
-        },
-        {
-          _id: "g004",
-          name: "Ladies PG Squad",
-          isPrivate: true,
-          avatar:
-            "https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?w=200&h=200&fit=crop&crop=face",
-          createdBy: {
-            _id: "u004",
-            name: "Pooja Reddy",
-            avatar:
-              "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-          },
-          totalMembers: 6,
-          isJoined: false,
-          lastActivity: "3h",
-        },
-        {
-          _id: "g005",
-          name: "Study Group - DSA",
-          isPrivate: true,
-          avatar:
-            "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=200&h=200&fit=crop&crop=face",
-          createdBy: {
-            _id: "u005",
-            name: "Arjun Singh",
-            avatar:
-              "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
-          },
-          totalMembers: 15,
-          isJoined: false,
-          lastActivity: "30m",
-        },
-        {
-          _id: "g006",
-          name: "Campus Photography",
-          isPrivate: true,
-          avatar:
-            "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=200&h=200&fit=crop&crop=face",
-          createdBy: {
-            _id: "u006",
-            name: "Sneha Joshi",
-            avatar:
-              "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face",
-          },
-          totalMembers: 22,
-          isJoined: false,
-          lastActivity: "1h",
-        },
-      ];
-
-      const joined = allGroups.filter((g) => g.isJoined);
-      const others = allGroups.filter((g) => !g.isJoined);
-
-      setState({
-        groups: allGroups,
-        joinedGroups: joined,
-        otherGroups: others,
-        loading: false,
-      });
-    }, 800);
-  };
-
-  const joinGroup = (groupId) => {
-    setState((prev) => {
-      const group = prev.groups.find((g) => g._id === groupId);
-      return {
-        ...prev,
-        groups: prev.groups.map((g) =>
-          g._id === groupId ? { ...g, isJoined: true } : g
-        ),
-        joinedGroups: [...prev.joinedGroups, { ...group, isJoined: true }],
-        otherGroups: prev.otherGroups.filter((g) => g._id !== groupId),
-      };
-    });
-  };
-
-  const leaveGroup = (groupId) => {
-    setState((prev) => {
-      const group = prev.groups.find((g) => g._id === groupId);
-      return {
-        ...prev,
-        groups: prev.groups.map((g) =>
-          g._id === groupId ? { ...g, isJoined: false } : g
-        ),
-        joinedGroups: prev.joinedGroups.filter((g) => g._id !== groupId),
-        otherGroups: [...prev.otherGroups, { ...group, isJoined: false }],
-      };
-    });
-  };
-
-  return {
-    ...state,
-    fetchGroups,
-    joinGroup,
-    leaveGroup,
-  };
-};
 
 const CreateGroupModal = ({ isOpen, onClose, onCreateGroup }) => {
   const [groupName, setGroupName] = useState("");
@@ -187,11 +30,12 @@ const CreateGroupModal = ({ isOpen, onClose, onCreateGroup }) => {
       onCreateGroup({
         name: groupName,
         description,
-        avatar:
+        groupImage:
           avatarPreview ||
           "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=200&h=200&fit=crop&crop=face",
         isPrivate: true,
       });
+
       setGroupName("");
       setDescription("");
       setGroupAvatar(null);
@@ -299,15 +143,15 @@ const CreateGroupModal = ({ isOpen, onClose, onCreateGroup }) => {
   );
 };
 
-const GroupCard = ({ group, onJoin, onLeave }) => {
+const GroupCard = ({ group, onJoin, onLeave, isJoined, openGroup }) => {
   const [showDropdown, setShowDropdown] = useState(false);
 
   return (
     <div className="flex items-center justify-between p-4 border-b border-gray-800 hover:bg-gray-950 transition-colors">
       <div className="flex items-center gap-3 flex-1">
-        <div className="relative">
+        <div onClick={() => openGroup(group._id)} className="relative">
           <img
-            src={group.avatar}
+            src={group.groupImage}
             alt={group.name}
             className="w-14 h-14 rounded-full object-cover"
           />
@@ -316,31 +160,32 @@ const GroupCard = ({ group, onJoin, onLeave }) => {
           </div>
         </div>
 
-        <div className="flex-1 min-w-0">
+        <div onClick={() => openGroup(group._id)} className="flex-1 min-w-0">
           <h3 className="font-semibold text-white text-sm truncate">
             {group.name}
           </h3>
           <div className="flex items-center gap-2 text-gray-400 text-xs mt-1">
             <Users className="w-3 h-3" />
-            <span>{group.totalMembers} members</span>
+            <span>{group.stats.totalMembers} members</span>
             <span>•</span>
-            <span>{group.lastActivity}</span>
+            <span>{formatDateTime(group.updatedAt)}</span>
           </div>
           <div className="flex items-center gap-2 mt-1">
             <img
               src={group.createdBy.avatar}
-              alt={group.createdBy.name}
+              alt={group.createdBy.username}
+              referrerPolicy="no-referrer"
               className="w-4 h-4 rounded-full object-cover"
             />
             <span className="text-xs text-gray-500">
-              {group.createdBy.name}
+              {group.createdBy.username}
             </span>
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        {group.isJoined ? (
+        {isJoined ? (
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
@@ -377,22 +222,28 @@ const GroupCard = ({ group, onJoin, onLeave }) => {
 };
 
 const GroupsPage = () => {
-  const {
-    groups,
-    joinedGroups,
-    otherGroups,
-    loading,
-    fetchGroups,
-    joinGroup,
-    leaveGroup,
-  } = useGroupStore();
+  const fetchJoinedGroups = useGroupStore((state) => state.fetchJoinedGroups);
+  const joinedGroups = useGroupStore((state) => state.joinedGroups);
+  const createGroup = useGroupStore((state) => state.createGroup);
+  const otherGroups = useGroupStore((state) => state.otherGroups);
+  const requestToJoinGroup = useGroupStore((state) => state.requestToJoinGroup);
+  const leaveGroup = useGroupStore((state) => state.leaveGroup);
+  const fetchDiscoverGroups = useGroupStore(
+    (state) => state.fetchDiscoverGroups
+  );
+  // const joinedGroups = [];
+  // const otherGroups = [];
+  const loading = false;
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("joined");
   const [showCreateModal, setShowCreateModal] = useState(false);
-
+  const navigate = useNavigate();
   useEffect(() => {
-    fetchGroups();
-  }, []);
+    fetchJoinedGroups();
+    if (activeTab != "joined") {
+      fetchDiscoverGroups();
+    }
+  }, [activeTab]);
 
   const filteredJoinedGroups = joinedGroups.filter((group) =>
     group.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -404,7 +255,21 @@ const GroupsPage = () => {
 
   const handleCreateGroup = (groupData) => {
     console.log("Creating group:", groupData);
-    // Here you would call your create group API
+    createGroup(groupData);
+  };
+
+  const handleRequestToJoinGroup = (groupId) => {
+    console.log(groupId);
+    requestToJoinGroup(groupId);
+  };
+
+  const handleLeaveGroup = (groupId) => {
+    leaveGroup(groupId);
+  };
+
+  const handleOpenGroup = (groupId) => {
+    console.log(groupId);
+    navigate(`/groupchat/${groupId}`);
   };
 
   if (loading) {
@@ -510,8 +375,9 @@ const GroupsPage = () => {
                   <GroupCard
                     key={group._id}
                     group={group}
-                    onJoin={joinGroup}
-                    onLeave={leaveGroup}
+                    isJoined={true}
+                    openGroup={handleOpenGroup}
+                    onLeave={handleLeaveGroup}
                   />
                 ))}
               </div>
@@ -537,8 +403,8 @@ const GroupsPage = () => {
                   <GroupCard
                     key={group._id}
                     group={group}
-                    onJoin={joinGroup}
-                    onLeave={leaveGroup}
+                    onJoin={handleRequestToJoinGroup}
+                    // onLeave={leaveGroup}
                   />
                 ))}
               </div>

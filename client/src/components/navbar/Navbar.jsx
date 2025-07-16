@@ -1,12 +1,14 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Home, Users, Plus, Bell, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import useNotificationStore from "../../store/notificationStore";
 
 const Navbar = ({ onCreatePostClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const isActive = (path) => location.pathname === path;
+  const { hasUnread, addNotification } = useNotificationStore();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-[#111827] to-[#1f2937] border-t border-gray-800">
@@ -49,13 +51,16 @@ const Navbar = ({ onCreatePostClick }) => {
         {/* Notifications */}
         <button
           onClick={() => navigate("/notifications")}
-          className={`flex flex-col items-center transition-colors ${
+          className={`relative flex flex-col items-center transition-colors ${
             isActive("/notifications")
               ? "text-yellow-400"
               : "text-gray-400 hover:text-yellow-400"
           }`}
         >
           <Bell className="w-6 h-6" />
+          {hasUnread && (
+            <span className="absolute top-0 right-1 w-2 h-2 bg-red-500 rounded-full" />
+          )}
           <span className="text-[10px] mt-0.5">Alerts</span>
         </button>
 
