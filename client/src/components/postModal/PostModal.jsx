@@ -229,7 +229,8 @@ const PostModal = ({ show, onClose, id = null }) => {
 
     const isImage = file.type.startsWith("image/");
     const isVideo = file.type.startsWith("video/");
-
+    const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+    console.log("File size:", sizeInMB, "MB");
     if (!isImage && !isVideo) {
       alert("Only image and video files are allowed.");
       return;
@@ -425,11 +426,22 @@ const PostModal = ({ show, onClose, id = null }) => {
             {/* Image Preview */}
             <div className="flex-1 bg-black flex items-center justify-center">
               <div className="w-full max-w-md aspect-square">
-                <img
-                  src={imagePreview || "/placeholder.svg"}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
+                {mediaType === "image" ? (
+                  <img
+                    src={imagePreview || "/placeholder.svg"}
+                    alt="Preview"
+                    className="w-full h-full object-cover rounded-md"
+                  />
+                ) : (
+                  <video
+                    src={imagePreview}
+                    autoPlay
+                    loop
+                    playsInline
+                    controls
+                    className="w-full h-full object-contain rounded-md"
+                  />
+                )}
               </div>
             </div>
 

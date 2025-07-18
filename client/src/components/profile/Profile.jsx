@@ -570,7 +570,7 @@ export default function InstagramProfilePage() {
       <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 z-40">
         <div className="flex justify-between items-center max-w-md mx-auto">
           <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Profile
+            Profiles
           </h1>
           <HamburgerMenu />
         </div>

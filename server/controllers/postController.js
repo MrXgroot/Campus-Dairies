@@ -49,7 +49,7 @@ exports.uploadPost = async (req, res) => {
   const { caption, groupId, mood } = req.body;
   const userId = req.user.id;
   const file = req.file;
-
+  console.log("inside the controller");
   if (!file || !file.path) {
     return res.status(400).json({ error: "File upload failed" });
   }
@@ -95,7 +95,7 @@ exports.uploadPost = async (req, res) => {
       mood,
       createdBy: userId,
       groupId,
-      taggedUsers, // ✅ now a clean array of ObjectIds
+      taggedUsers,
     });
     console.log(newPost);
     res.status(201).json(newPost);

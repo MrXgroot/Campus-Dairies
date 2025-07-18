@@ -12,6 +12,7 @@ const userSchema = new Schema(
     },
     email: { type: String, required: true, unique: true },
     avatar: { type: String, default: "" },
+    avatarPublicId: { type: String, default: "" },
     quote: { type: String, default: "" },
 
     password: { type: String, required: true }, // hashed
@@ -22,7 +23,6 @@ const userSchema = new Schema(
 
     waves: [{ type: Schema.Types.ObjectId, ref: "User" }],
     hearts: [{ type: Schema.Types.ObjectId, ref: "User" }],
-    starredBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
 
     isOnline: { type: Boolean, default: false },
     lastActive: { type: Date, default: Date.now },

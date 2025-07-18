@@ -113,6 +113,7 @@ const HomePage = () => {
     return () => observer.disconnect();
   }, [hasMore, loading]);
 
+  console.log(publicPosts);
   if (loading) {
     return <LoadingScreen />;
   }
@@ -209,7 +210,7 @@ const StoriesSection = ({ stories }) => {
                   : story.isViewed
                   ? "bg-gray-300"
                   : "bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500"
-              } p-1 rounded-full`}
+              } p-1 rounded-full relative`}
             >
               <div className="w-16 h-16 rounded-full overflow-hidden bg-white dark:bg-gray-800 p-0.5">
                 {story.isAdd ? (
@@ -225,6 +226,7 @@ const StoriesSection = ({ stories }) => {
                   />
                 )}
               </div>
+              <div className="absolute w-4 h-4 bg-green-500 rounded-full left-[70%] bottom-[2%] border-2  border-white "></div>
             </div>
             <p className="text-xs mt-1 text-gray-700 dark:text-gray-300 truncate w-16">
               {story.username}

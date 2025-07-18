@@ -9,9 +9,11 @@ const useProfileStore = create((set) => ({
 
   // Get logged-in user's profile
   fetchProfile: async () => {
+    console.log("fetching");
     try {
       set({ loading: true });
-      const res = await api.get("/auth/me");
+      const res = await api.get("/users/me");
+      console.log(res.data);
       set({ profile: res.data });
     } catch (err) {
       console.error("Fetch profile failed:", err);
@@ -22,9 +24,13 @@ const useProfileStore = create((set) => ({
 
   // Update name or profile image
   updateProfile: async (updatedFields) => {
+    console.log(updatedFields);
     try {
       set({ loading: true });
-      const res = await api.put("/users/update", updatedFields);
+      const res = await api.put("/users/update", updatedFields, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      console.log(res.data);
       set({ profile: res.data });
     } catch (err) {
       console.error("Update profile failed:", err);

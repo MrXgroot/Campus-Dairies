@@ -8,9 +8,10 @@ import Profile from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/navbar/Navbar";
 import NotificationsPage from "./pages/NotificationPage";
-
+import CommentModal from "./components/comment/CommentModal";
 import useAuthStore from "./store/authStore";
 import useNotificationStore from "./store/notificationStore";
+import useModalStore from "./store/modalStore";
 import { socket } from "./utils/socket";
 import useOnlineUserStore from "./store/onlineUserStore";
 const App = () => {
@@ -19,9 +20,12 @@ const App = () => {
     (state) => state.addNotification
   );
   const setOnlineUsers = useOnlineUserStore((state) => state.setOnlineUsers);
+  const showCommentModal = useModalStore((state) => state.showCommentModal);
+  const closeCommentModal = useModalStore((state) => state.closeCommentModal);
+
   const location = useLocation();
   const navigate = useNavigate();
-
+  console.log(showCommentModal);
   // ✅ Auth & user initialization
   useEffect(() => {
     if (token && !isLoggedIn) {
@@ -86,6 +90,7 @@ const App = () => {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
+      {showCommentModal && <CommentModal onClose={() => closeCommentModal()} />}
 
       {isLoggedIn && location.pathname !== "/login" && <Navbar />}
     </>

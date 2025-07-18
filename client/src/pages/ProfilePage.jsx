@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import useProfileStore from "../store/profileStore";
+
 import {
   LogOut,
   Camera,
@@ -13,119 +14,9 @@ import {
   Menu,
   X,
   Star,
+  Settings,
 } from "lucide-react";
-
-const profileUser = {
-  id: "u001",
-  name: "Sukesh Acharya",
-  username: "sukesh22",
-  email: "sukesh@example.com",
-  avatar:
-    "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&h=200&w=200",
-  quote: "Some goodbyes are forever 🌙",
-  groups: [
-    { id: "g001", name: "MCA Batch" },
-    { id: "g002", name: "Hostel A" },
-    { id: "g003", name: "Study Group" },
-  ],
-  stats: {
-    totalPosts: 8,
-    heartsReceived: 142,
-    taggedIn: 23,
-  },
-};
-
-const myPosts = [
-  {
-    id: "p001",
-    type: "photo",
-    mediaUrl:
-      "https://images.pexels.com/photos/1438072/pexels-photo-1438072.jpeg?auto=compress&cs=tinysrgb&w=600",
-    caption: "Final MCA day! Can't believe it's over 😭",
-    mood: "😭",
-    createdAt: "2025-07-12T14:00:00Z",
-    group: { id: "g001", name: "MCA Batch" },
-    reactions: { hearts: 15, waves: 8, comments: 12 },
-    taggedUsers: [
-      { id: "u002", name: "Divya" },
-      { id: "u003", name: "Rahul" },
-      { id: "u004", name: "Shruthi" },
-    ],
-  },
-  {
-    id: "p002",
-    type: "photo",
-    mediaUrl:
-      "https://images.pexels.com/photos/1580271/pexels-photo-1580271.jpeg?auto=compress&cs=tinysrgb&w=600",
-    caption: "Graduation ceremony prep! 🎓✨",
-    mood: "😊",
-    createdAt: "2025-07-11T10:30:00Z",
-    group: { id: "g001", name: "MCA Batch" },
-    reactions: { hearts: 28, waves: 12, comments: 18 },
-    taggedUsers: [
-      { id: "u002", name: "Divya" },
-      { id: "u005", name: "Priya" },
-    ],
-  },
-  {
-    id: "p003",
-    type: "video",
-    mediaUrl:
-      "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-    caption: "Hostel memories compilation 🏠💫",
-    mood: "🥺",
-    createdAt: "2025-07-10T18:45:00Z",
-    group: { id: "g002", name: "Hostel A" },
-    reactions: { hearts: 35, waves: 22, comments: 25 },
-    taggedUsers: [
-      { id: "u003", name: "Rahul" },
-      { id: "u006", name: "Ankit" },
-    ],
-  },
-];
-
-const taggedPosts = [
-  {
-    id: "p009",
-    type: "video",
-    mediaUrl:
-      "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-    caption: "Hostel corridor flashmob 😂 Missing these days!",
-    createdBy: {
-      id: "u003",
-      name: "Rahul",
-      avatar:
-        "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100",
-    },
-    group: { id: "g002", name: "Hostel A" },
-    taggedUsers: [
-      { id: "u001", name: "Sukesh" },
-      { id: "u007", name: "Varun" },
-    ],
-    createdAt: "2025-07-09T20:15:00Z",
-    reactions: { hearts: 45, waves: 18, comments: 30 },
-  },
-  {
-    id: "p010",
-    type: "photo",
-    mediaUrl:
-      "https://images.pexels.com/photos/1367269/pexels-photo-1367269.jpeg?auto=compress&cs=tinysrgb&w=600",
-    caption: "Study group session before finals 📚💪",
-    createdBy: {
-      id: "u002",
-      name: "Divya",
-      avatar:
-        "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=100",
-    },
-    group: { id: "g003", name: "Study Group" },
-    taggedUsers: [
-      { id: "u001", name: "Sukesh" },
-      { id: "u004", name: "Shruthi" },
-    ],
-    createdAt: "2025-07-08T16:45:00Z",
-    reactions: { hearts: 32, waves: 15, comments: 22 },
-  },
-];
+import PostCard from "../components/post/PostCard";
 
 // Custom hook for video auto-play with intersection observer
 const useVideoAutoPlay = () => {
@@ -186,19 +77,21 @@ export default function InstagramProfilePage() {
     (state) => state.fetchUploadedPosts
   );
   const fetchTaggedPosts = useProfileStore((state) => state.fetchTaggedPosts);
+  const updateProfile = useProfileStore((state) => state.updateProfile);
+  const fileInputRef = useRef();
   useEffect(() => {
     fetchProfile();
     fetchUploadedPosts();
     fetchTaggedPosts();
   }, []);
-  console.log(posts);
 
   // Handle profile photo change
-  const handleProfilePicChange = () => {
-    const newUrl = prompt("Enter new profile photo URL:");
-    if (newUrl && newUrl.trim()) {
-      setProfile({ ...profile, avatar: newUrl.trim() });
-    }
+  const onProfileButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const onUploadAvatar = (file) => {
+    updateProfile(file);
   };
 
   // Handle post deletion with confirmation
@@ -330,7 +223,12 @@ export default function InstagramProfilePage() {
         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
         aria-label="Menu"
       >
-        <Menu size={20} className="text-gray-900 dark:text-white" />
+        <Settings
+          size={20}
+          className={`text-gray-900 dark:text-white ${
+            showHamburgerMenu ? "rotate-[-90deg]" : "rotate-0"
+          } transition-all duration-300 ease-in-out`}
+        />
       </button>
       {showHamburgerMenu && (
         <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 min-w-[160px] z-50">
@@ -357,80 +255,6 @@ export default function InstagramProfilePage() {
       )}
     </div>
   );
-
-  // Feedback Modal Component
-  const FeedbackModal = () =>
-    showFeedbackModal && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-gray-900 rounded-lg max-w-md w-full p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Share Your Feedback
-            </h3>
-            <button
-              onClick={() => setShowFeedbackModal(false)}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-            >
-              <X size={20} className="text-gray-500 dark:text-gray-400" />
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                How was your experience with this app?
-              </label>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    onClick={() => setFeedbackRating(star)}
-                    className="p-1 hover:scale-110 transition-transform"
-                  >
-                    <Star
-                      size={24}
-                      className={`${
-                        star <= feedbackRating
-                          ? "text-yellow-400 fill-yellow-400"
-                          : "text-gray-300 dark:text-gray-600"
-                      }`}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Additional Comments (Optional)
-              </label>
-              <textarea
-                value={feedbackText}
-                onChange={(e) => setFeedbackText(e.target.value)}
-                placeholder="Tell us what you think..."
-                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none"
-                rows={4}
-              />
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setShowFeedbackModal(false)}
-                className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleFeedbackSubmit}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-              >
-                Submit
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
 
   // Render posts function
   const renderPosts = (postsArray, isTagged = false) => {
@@ -590,92 +414,21 @@ export default function InstagramProfilePage() {
       {/* Header */}
       <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 z-40">
         <div className="flex justify-between items-center max-w-md mx-auto">
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Profile
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:scale-105 transition-transform cursor-pointer">
+            CampusDairies
           </h1>
           <HamburgerMenu />
         </div>
       </div>
 
-      {/* Feedback Modal */}
-      <FeedbackModal />
-
       <div className="max-w-md mx-auto py-4 space-y-6">
         {/* Profile Header with Stats */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-800">
-          <div className="flex items-start gap-4 mb-4">
-            <div className="relative">
-              <img
-                src={profile.avatar || "/placeholder.svg"}
-                referrerPolicy="no-referrer"
-                alt="Profile"
-                className="w-20 h-20 rounded-full object-cover"
-              />
-              <button
-                onClick={handleProfilePicChange}
-                className="absolute -bottom-1 -right-1 bg-blue-500 hover:bg-blue-600 p-1.5 rounded-full transition-colors"
-              >
-                <Camera size={12} className="text-white" />
-              </button>
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
-                {profile.name}
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
-                @{profile.username}
-              </p>
-              <p className="text-gray-700 dark:text-gray-300 text-sm">
-                {profile.quote}
-              </p>
-            </div>
-          </div>
-          {/* Stats Section - Now inside profile container */}
-          {/* <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-            <div className="text-center">
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                {profile.stats.totalPosts}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Posts
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                {profile.stats.heartsReceived}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Hearts
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                {profile.stats.taggedIn}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Tagged
-              </div>
-            </div>
-          </div> */}
-        </div>
-
-        {/* Groups Section */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
-          <h3 className="font-medium text-gray-900 dark:text-white mb-3">
-            Groups
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {profile.groups.length > 0 &&
-              profile.groups.map((group) => (
-                <span
-                  key={group.id}
-                  className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm"
-                >
-                  {group.name}
-                </span>
-              ))}
-          </div>
-        </div>
+        <ProfileHeaderAndStats
+          profile={profile}
+          onProfileButtonClick={onProfileButtonClick}
+          onUploadAvatar={onUploadAvatar}
+          fileInputRef={fileInputRef}
+        />
 
         {/* Tabs */}
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -688,7 +441,7 @@ export default function InstagramProfilePage() {
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
-              Posts
+              {`Posts(${posts.length})`}
             </button>
             <button
               onClick={() => setActiveTab("tagged")}
@@ -704,8 +457,124 @@ export default function InstagramProfilePage() {
         </div>
 
         {/* Posts Content */}
-        {activeTab === "posts" ? renderPosts(posts) : renderPosts(tagged, true)}
+        {activeTab === "posts"
+          ? posts.map((post) => <PostCard key={post._id} post={post} />)
+          : renderPosts(tagged, true)}
       </div>
     </div>
   );
 }
+
+import imageCompression from "browser-image-compression";
+
+const ProfileHeaderAndStats = ({
+  profile,
+  onUploadAvatar,
+  onProfileButtonClick,
+  fileInputRef,
+}) => {
+  const [showOptions, setShowOptions] = useState(false);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    console.log(file);
+    if (!file || !file.type.startsWith("image/")) return;
+
+    try {
+      // ✅ Compression options
+      const options = {
+        maxSizeMB: 0.2, // Compress to ~200KB
+        maxWidthOrHeight: 500,
+        useWebWorker: true,
+      };
+
+      // ✅ Compress the file
+      const compressedFile = await imageCompression(file, options);
+      console.log(compressedFile instanceof File);
+      // ✅ Prepare form data
+      const formData = new FormData();
+      formData.append("avatar", compressedFile);
+      formData.append("isAvatar", "true");
+
+      // ✅ Trigger upload
+      onUploadAvatar(formData);
+    } catch (error) {
+      console.error("Avatar compression failed", error);
+    }
+  };
+
+  return (
+    <div className="p-4 pt-6 bg-white dark:bg-gray-900 relative">
+      {/* More Button */}
+      <div className="absolute top-3 right-4">
+        <button
+          onClick={() => setShowOptions((prev) => !prev)}
+          className="text-gray-600 dark:text-gray-300"
+        >
+          <MoreVertical size={20} />
+        </button>
+
+        {showOptions && (
+          <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 shadow-md rounded-md z-10">
+            <button
+              onClick={() => {
+                onEditProfile();
+                setShowOptions(false);
+              }}
+              className="px-4 py-2 text-sm w-full text-left text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              Update Profile
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        accept="image/*"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
+      {/* Avatar + Info */}
+      <div className="flex gap-4 items-start mb-3">
+        <div className="relative w-16 h-16 shrink-0">
+          <img
+            src={profile.avatar || "/placeholder.svg"}
+            referrerPolicy="no-referrer"
+            alt="Profile"
+            className="w-full h-full object-cover rounded-full border border-gray-300 dark:border-gray-700"
+          />
+          <button
+            onClick={onProfileButtonClick}
+            className="absolute -bottom-1 -right-1 bg-blue-500 hover:bg-blue-600 p-1 rounded-full"
+          >
+            <Camera size={14} className="text-white" />
+          </button>
+        </div>
+        <div className="flex flex-col justify-center">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+            {profile.name}
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            @{profile.username}
+          </p>
+          {profile.quote && (
+            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+              {profile.quote}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="text-sm text-gray-600 dark:text-gray-400 flex flex-col flex-wrap gap-x-4 gap-y-1">
+        <span>{profile.stats?.heartsCount || 0} Hearts</span>
+        <span>{profile.stats?.groupsCount || 0} Groups</span>
+        <span>{profile.stats?.wavesCount || 0} Waves</span>
+      </div>
+    </div>
+  );
+};
