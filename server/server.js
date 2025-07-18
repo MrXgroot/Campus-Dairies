@@ -35,7 +35,7 @@ initSocketServer(io);
 // Middlewares
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://campus-dairies.vercel.app",
     credentials: true,
   })
 );
