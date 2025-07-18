@@ -421,7 +421,7 @@ export default function InstagramProfilePage() {
         </div>
       </div>
 
-      <div className="max-w-md mx-auto py-4 space-y-6">
+      <div className="max-w-md mx-auto ">
         {/* Profile Header with Stats */}
         <ProfileHeaderAndStats
           profile={profile}
@@ -430,32 +430,28 @@ export default function InstagramProfilePage() {
           fileInputRef={fileInputRef}
         />
 
-        {/* Tabs */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <div className="flex">
-            <button
-              onClick={() => setActiveTab("posts")}
-              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-                activeTab === "posts"
-                  ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
-            >
-              {`Posts(${posts.length})`}
-            </button>
-            <button
-              onClick={() => setActiveTab("tagged")}
-              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-                activeTab === "tagged"
-                  ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
-            >
-              Tagged
-            </button>
-          </div>
+        <div className="flex bg-white dark:bg-gray-800 dark:border-b dark:border-gray-700 ">
+          <button
+            onClick={() => setActiveTab("posts")}
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+              activeTab === "posts"
+                ? "text-purple-400 border-b-2 border-purple-400"
+                : "text-gray-400 hover:text-gray-300"
+            }`}
+          >
+            My Posts ({posts.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("tagged")}
+            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+              activeTab === "tagged"
+                ? "text-purple-400 border-b-2 border-purple-400"
+                : "text-gray-400 hover:text-gray-300"
+            }`}
+          >
+            Tagged ({posts.length})
+          </button>
         </div>
-
         {/* Posts Content */}
         {activeTab === "posts"
           ? posts.map((post) => <PostCard key={post._id} post={post} />)
@@ -504,7 +500,7 @@ const ProfileHeaderAndStats = ({
   };
 
   return (
-    <div className="p-4 pt-6 bg-white dark:bg-gray-900 relative">
+    <div className="p-4 pt-6 bg-white dark:bg-gray-800  relative">
       {/* More Button */}
       <div className="absolute top-3 right-4">
         <button

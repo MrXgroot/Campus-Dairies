@@ -147,24 +147,33 @@ const GroupCard = ({ group, onJoin, onLeave, isJoined, openGroup }) => {
   const [showDropdown, setShowDropdown] = useState(false);
 
   return (
-    <div className="flex items-center justify-between p-4 border-b border-gray-800 hover:bg-gray-950 transition-colors">
+    <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 transition-colors">
+      {/* Group Avatar and Info */}
       <div className="flex items-center gap-3 flex-1">
-        <div onClick={() => openGroup(group._id)} className="relative">
+        {/* Group Image */}
+        <div
+          onClick={() => openGroup(group._id)}
+          className="relative cursor-pointer"
+        >
           <img
             src={group.groupImage}
             alt={group.name}
             className="w-14 h-14 rounded-full object-cover"
           />
-          <div className="absolute -top-1 -right-1 bg-gray-900 rounded-full p-1">
-            <Lock className="w-3 h-3 text-purple-400" />
+          <div className="absolute -top-1 -right-1 bg-white dark:bg-gray-900 rounded-full p-[2px] shadow">
+            <Lock className="w-3 h-3 text-purple-600 dark:text-purple-400" />
           </div>
         </div>
 
-        <div onClick={() => openGroup(group._id)} className="flex-1 min-w-0">
-          <h3 className="font-semibold text-white text-sm truncate">
+        {/* Group Info */}
+        <div
+          onClick={() => openGroup(group._id)}
+          className="flex-1 min-w-0 cursor-pointer"
+        >
+          <h3 className="font-semibold text-sm truncate text-gray-900 dark:text-white">
             {group.name}
           </h3>
-          <div className="flex items-center gap-2 text-gray-400 text-xs mt-1">
+          <div className="flex items-center gap-2 text-xs mt-1 text-gray-600 dark:text-gray-400">
             <Users className="w-3 h-3" />
             <span>{group.stats.totalMembers} members</span>
             <span>•</span>
@@ -177,30 +186,32 @@ const GroupCard = ({ group, onJoin, onLeave, isJoined, openGroup }) => {
               referrerPolicy="no-referrer"
               className="w-4 h-4 rounded-full object-cover"
             />
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
               {group.createdBy.username}
             </span>
           </div>
         </div>
       </div>
 
+      {/* Action Button */}
       <div className="flex items-center gap-2">
         {isJoined ? (
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-full transition-colors"
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
             >
               <MoreHorizontal className="w-5 h-5" />
             </button>
+
             {showDropdown && (
-              <div className="absolute right-0 top-full mt-1 bg-gray-800 rounded-lg shadow-lg border border-gray-700 min-w-[120px] z-10">
+              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 min-w-[140px] z-10">
                 <button
                   onClick={() => {
                     onLeave(group._id);
                     setShowDropdown(false);
                   }}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-red-400 hover:bg-gray-700 transition-colors text-sm"
+                  className="w-full flex items-center gap-2 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm"
                 >
                   <LogOut className="w-4 h-4" />
                   Leave Group
@@ -284,9 +295,9 @@ const GroupsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen  dark:bg-gray-900 bg-gray-50 text-white relative">
       {/* Header */}
-      <div className="bg-black border-b border-gray-800 sticky top-0 z-40">
+      {/* <div className="bg-black border-b border-gray-800 sticky top-0 z-40">
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -294,18 +305,12 @@ const GroupsPage = () => {
                 CampusDairies
               </h1>
             </div>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="p-2 bg-purple-600 hover:bg-purple-700 rounded-full transition-colors"
-            >
-              <Plus className="w-6 h-6" />
-            </button>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Search */}
-      <div className="px-4 py-3 border-b border-gray-800">
+      {/* <div className="px-4 py-3 border-b border-gray-800">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
@@ -316,10 +321,14 @@ const GroupsPage = () => {
             className="w-full pl-10 pr-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 text-sm"
           />
         </div>
-      </div>
-
+      </div> */}
+      <Header
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        placeholder="Search groups..."
+      />
       {/* Tabs */}
-      <div className="flex bg-black border-b border-gray-800">
+      <div className="flex bg-white dark:bg-gray-800 border-b dark:border-gray-700">
         <button
           onClick={() => setActiveTab("joined")}
           className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
@@ -347,9 +356,9 @@ const GroupsPage = () => {
         {activeTab === "joined" ? (
           <div>
             {filteredJoinedGroups.length === 0 ? (
-              <div className="text-center py-20 px-4">
+              <div className="text-center py-20 px-4 ">
                 <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">
+                <h3 className="text-lg font-semibold dark:text-white text-black mb-2">
                   {searchTerm ? "No groups found" : "No groups yet"}
                 </h3>
                 <p className="text-gray-400 text-sm max-w-sm mx-auto mb-4">
@@ -410,6 +419,8 @@ const GroupsPage = () => {
         )}
       </div>
 
+      <FloatingActionButton onClick={() => setShowCreateModal(true)} />
+
       {/* Create Group Modal */}
       <CreateGroupModal
         isOpen={showCreateModal}
@@ -421,3 +432,12 @@ const GroupsPage = () => {
 };
 
 export default GroupsPage;
+
+const FloatingActionButton = ({ onClick }) => (
+  <button
+    onClick={onClick}
+    className="fixed bottom-20 right-6 w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full shadow-lg flex items-center justify-center z-40 hover:scale-110 active:scale-95 transition-transform duration-200"
+  >
+    <Plus className="w-6 h-6 text-white" />
+  </button>
+);

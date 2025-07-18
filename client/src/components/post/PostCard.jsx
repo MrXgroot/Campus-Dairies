@@ -151,7 +151,7 @@ const PostCard = ({ post }) => {
       </div>
 
       {/* Media */}
-      <div className="relative bg-black overflow-hidden">
+      <div className="relative bg-white dark:bg-black overflow-hidden">
         {post.type === "video" ? (
           <video
             ref={videoRef}
