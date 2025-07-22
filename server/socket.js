@@ -20,19 +20,6 @@ const initSocketServer = (io) => {
       });
 
       io.emit("online-users", Array.from(onlineUsers.values()));
-
-      try {
-        const unreadNotifs = await Notification.find({
-          userId,
-          isRead: false,
-        }).sort({ createdAt: -1 });
-
-        unreadNotifs.forEach((notif) => {
-          socket.emit("new-notification", notif);
-        });
-      } catch (err) {
-        console.error("Error sending notifications:", err);
-      }
     });
 
     socket.on("disconnect", () => {

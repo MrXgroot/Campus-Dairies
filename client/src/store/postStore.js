@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import api from "../utils/api";
-
+import toast from "react-hot-toast";
+import useLoaderStore from "../store/loaderStore";
 const usePostStore = create((set, get) => ({
-  loading: false,
+  loadingPosts: false,
   publicPosts: [],
   groupPosts: [],
   currentPage: 1,
@@ -10,6 +11,8 @@ const usePostStore = create((set, get) => ({
   limit: 12,
   hasMore: true,
   hasMoreGroup: true,
+  posts: [],
+  tagged: [],
 
   // Reset public pagination state
   resetPagination: () => {
@@ -32,7 +35,7 @@ const usePostStore = create((set, get) => ({
   // ✅ Fetch public posts with pagination
   fetchPublicPosts: async () => {
     const { currentPage, limit, publicPosts } = get();
-    set({ loading: true });
+    set({ loadingPosts: true });
 
     try {
       const res = await api.get(
@@ -48,14 +51,14 @@ const usePostStore = create((set, get) => ({
     } catch (err) {
       console.error("Failed to fetch public posts:", err);
     } finally {
-      set({ loading: false });
+      set({ loadingPosts: false });
     }
   },
 
   // ✅ Fetch group posts with pagination
   fetchGroupPosts: async (groupId) => {
     const { groupPage, limit, groupPosts } = get();
-    set({ loading: true });
+    set({ loadingPosts: true });
 
     try {
       const res = await api.get(
@@ -71,7 +74,7 @@ const usePostStore = create((set, get) => ({
     } catch (err) {
       console.error("Failed to fetch group posts:", err);
     } finally {
-      set({ loading: false });
+      set({ loadingPosts: false });
     }
   },
 
@@ -97,12 +100,21 @@ const usePostStore = create((set, get) => ({
   },
 
   // Already existing logic:
-  uploadPost: async (formData) => {
-    try {
-      const res = await api.post("/posts/upload", formData);
-      const newPost = res.data;
+  uploadPost: async (formData, isGroupPost) => {
+    console.log(formData);
+    const { setUploading } = useLoaderStore.getState();
 
-      if (formData.groupId === "public") {
+    setUploading(true);
+    try {
+      const res = await api.post("/posts/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      const newPost = res.data;
+      console.log(res.data);
+
+      if (isGroupPost) {
         set((state) => ({
           publicPosts: [newPost, ...state.publicPosts],
         }));
@@ -111,8 +123,12 @@ const usePostStore = create((set, get) => ({
           groupPosts: [newPost, ...state.groupPosts],
         }));
       }
+      toast.success("Post uploaded successfully");
     } catch (err) {
+      toast.error("Post upload failed");
       console.error("Post upload failed:", err);
+    } finally {
+      setTimeout(() => setUploading(false), 500);
     }
   },
 
@@ -139,6 +155,50 @@ const usePostStore = create((set, get) => ({
       await api.post(`/posts/${postId}/comment`, { text: comment });
     } catch (err) {
       console.error("Failed to comment:", err);
+    }
+  },
+
+  deleteUploadedPost: async (postId) => {
+    console.log(postId);
+    let previousPosts;
+    set((state) => {
+      previousPosts = state.posts;
+      return {
+        posts: state.posts.filter((post) => post._id !== postId),
+      };
+    });
+
+    try {
+      const res = await api.delete(`/posts/${postId}`);
+      if (res.data.success || res.status == 200) {
+        toast.success("Post deleted sucessfully");
+      }
+    } catch (err) {
+      console.error("Delete failed, restoring post", err);
+      // Rollback
+      set({ posts: previousPosts });
+
+      toast.error("Failed to delete post. Please try again.");
+    }
+  },
+  // Get user's uploaded posts
+  fetchUploadedPosts: async () => {
+    try {
+      const res = await api.get("/posts/my-uploads");
+      console.log(res.data);
+      set({ posts: res.data });
+    } catch (err) {
+      console.error("Fetch uploaded posts failed:", err);
+    }
+  },
+
+  // Get posts user is tagged in
+  fetchTaggedPosts: async () => {
+    try {
+      const res = await api.get("/posts/tagged");
+      set({ tagged: res.data });
+    } catch (err) {
+      console.error("Fetch tagged posts failed:", err);
     }
   },
 }));

@@ -1,194 +1,121 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Heart, MoreVertical, Send } from "lucide-react";
-const CommentModal = ({ isOpen, onClose, post }) => {
-  const [comments, setComments] = useState([
-    {
-      id: 1,
-      user: {
-        username: "alice_wonder",
-        avatar:
-          "https://images.unsplash.com/photo-1494790108755-2616b9e5d2f0?w=32&h=32&fit=crop&crop=face&round=true",
-        isVerified: true,
-      },
-      text: "This is amazing! Love the composition 📸",
-      timestamp: "2h",
-      likes: 12,
-      isLiked: false,
-      replies: [
-        {
-          id: 11,
-          user: {
-            username: "bob_photographer",
-            avatar:
-              "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face&round=true",
-          },
-          text: "I agree! The lighting is perfect",
-          timestamp: "1h",
-          likes: 3,
-          isLiked: true,
-          replyingTo: "alice_wonder",
-        },
-      ],
-    },
-    {
-      id: 2,
-      user: {
-        username: "creative_soul",
-        avatar:
-          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&crop=face&round=true",
-      },
-      text: "Stunning work! 🔥🔥",
-      timestamp: "3h",
-      likes: 8,
-      isLiked: true,
-      replies: [],
-    },
-    {
-      id: 3,
-      user: {
-        username: "art_lover99",
-        avatar:
-          "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&crop=face&round=true",
-      },
-      text: "Can you share the camera settings you used for this shot?",
-      timestamp: "4h",
-      likes: 5,
-      isLiked: false,
-      replies: [],
-    },
-  ]);
+import useCommentStore from "../../store/commentStore";
+import useModalStore from "../../store/modalStore";
+import { formatDateTime } from "../../utils/formatDate";
+const CommentModal = ({ isOpen, onClose }) => {
+  // const [comments, setComments] = useState([
+  //   {
+  //     id: 1,
+  //     user: {
+  //       username: "alice_wonder",
+  //       avatar:
+  //         "https://images.unsplash.com/photo-1494790108755-2616b9e5d2f0?w=32&h=32&fit=crop&crop=face&round=true",
+  //       isVerified: true,
+  //     },
+  //     text: "This is amazing! Love the composition 📸",
+  //     timestamp: "2h",
+  //     likes: 12,
+  //     isLiked: false,
+  //     replies: [
+  //       {
+  //         id: 11,
+  //         user: {
+  //           username: "bob_photographer",
+  //           avatar:
+  //             "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face&round=true",
+  //         },
+  //         text: "I agree! The lighting is perfect",
+  //         timestamp: "1h",
+  //         likes: 3,
+  //         isLiked: true,
+  //         replyingTo: "alice_wonder",
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     id: 2,
+  //     user: {
+  //       username: "creative_soul",
+  //       avatar:
+  //         "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&crop=face&round=true",
+  //     },
+  //     text: "Stunning work! 🔥🔥",
+  //     timestamp: "3h",
+  //     likes: 8,
+  //     isLiked: true,
+  //     replies: [],
+  //   },
+  //   {
+  //     id: 3,
+  //     user: {
+  //       username: "art_lover99",
+  //       avatar:
+  //         "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&crop=face&round=true",
+  //     },
+  //     text: "Can you share the camera settings you used for this shot?",
+  //     timestamp: "4h",
+  //     likes: 5,
+  //     isLiked: false,
+  //     replies: [],
+  //   },
+  // ]);
 
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState("");
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragY, setDragY] = useState(0);
-  const [startY, setStartY] = useState(0);
+  const [commentId, setCommentId] = useState(null);
 
+  const loading = useCommentStore((state) => state.loading);
+  const comments = useCommentStore((state) => state.comments);
+  const addComment = useCommentStore((state) => state.addComment);
+  const currentPost = useModalStore((state) => state.currentPost);
+  const getComments = useCommentStore((state) => state.getComments);
+  const resetComments = useCommentStore((state) => state.resetComments);
+  const hasMore = useCommentStore((state) => state.hasMore);
+
+  const replyToComment = useCommentStore((state) => state.replyToComment);
   const modalRef = useRef(null);
   const commentInputRef = useRef(null);
 
-  const handleMouseDown = (e) => {
-    setIsDragging(true);
-    setStartY(e.clientY);
-  };
+  const observerRef = useRef(null);
+  useEffect(() => {
+    resetComments();
+    getComments(currentPost);
+  }, []);
 
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    const deltaY = e.clientY - startY;
-    if (deltaY > 0) {
-      setDragY(deltaY);
-    }
-  };
-
-  const handleMouseUp = () => {
-    if (dragY > 100) {
-      onClose();
-    }
-    setIsDragging(false);
-    setDragY(0);
-  };
-
-  const handleTouchStart = (e) => {
-    setIsDragging(true);
-    setStartY(e.touches[0].clientY);
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isDragging) return;
-    const deltaY = e.touches[0].clientY - startY;
-    if (deltaY > 0) {
-      setDragY(deltaY);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (dragY > 100) {
-      onClose();
-    }
-    setIsDragging(false);
-    setDragY(0);
-  };
-
-  const handleLikeComment = (commentId, isReply = false, parentId = null) => {
-    setComments((prev) =>
-      prev.map((comment) => {
-        if (isReply && comment.id === parentId) {
-          return {
-            ...comment,
-            replies: comment.replies.map((reply) =>
-              reply.id === commentId
-                ? {
-                    ...reply,
-                    isLiked: !reply.isLiked,
-                    likes: reply.isLiked ? reply.likes - 1 : reply.likes + 1,
-                  }
-                : reply
-            ),
-          };
-        } else if (!isReply && comment.id === commentId) {
-          return {
-            ...comment,
-            isLiked: !comment.isLiked,
-            likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1,
-          };
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          console.log("fetching");
+          getComments(currentPost);
         }
-        return comment;
-      })
+      },
+      { threshold: 1.0 }
     );
-  };
+
+    if (observerRef.current) observer.observe(observerRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loading]);
+
+  console.log(comments);
 
   const handleAddComment = () => {
     if (!newComment.trim()) return;
 
-    const comment = {
-      id: Date.now(),
-      user: {
-        username: "current_user",
-        avatar:
-          "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face&round=true",
-      },
-      text: newComment,
-      timestamp: "now",
-      likes: 0,
-      isLiked: false,
-      replies: [],
-    };
-
-    setComments((prev) => [comment, ...prev]);
+    addComment(currentPost, newComment);
     setNewComment("");
   };
 
-  const handleReply = (commentId, username) => {
-    setReplyingTo({ commentId, username });
+  const handleReply = (commentId, username, userId) => {
+    setReplyingTo({ commentId, username, userId });
     setTimeout(() => commentInputRef.current?.focus(), 100);
   };
 
   const handleAddReply = () => {
     if (!replyText.trim() || !replyingTo) return;
-
-    const reply = {
-      id: Date.now(),
-      user: {
-        username: "current_user",
-        avatar:
-          "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face&round=true",
-      },
-      text: replyText,
-      timestamp: "now",
-      likes: 0,
-      isLiked: false,
-      replyingTo: replyingTo.username,
-    };
-
-    setComments((prev) =>
-      prev.map((comment) =>
-        comment.id === replyingTo.commentId
-          ? { ...comment, replies: [...comment.replies, reply] }
-          : comment
-      )
-    );
-
+    replyToComment(replyingTo.commentId, replyText, replyingTo.username);
     setReplyText("");
     setReplyingTo(null);
   };
@@ -209,22 +136,9 @@ const CommentModal = ({ isOpen, onClose, post }) => {
       <div
         ref={modalRef}
         className="bg-white rounded-t-2xl dark:bg-gray-800 w-full sm:w-96 sm:max-w-lg h-[85vh] sm:h-[600px] sm:rounded-lg flex flex-col overflow-hidden"
-        style={{
-          transform: `translateY(${dragY}px)`,
-          transition: isDragging ? "none" : "transform 0.3s ease",
-        }}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         {/* Header */}
-        <div
-          className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 cursor-grab active:cursor-grabbing"
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
-        >
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 cursor-grab active:cursor-grabbing">
           <div className="w-8"></div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             Comments
@@ -245,18 +159,18 @@ const CommentModal = ({ isOpen, onClose, post }) => {
         {/* Comments list */}
         <div className="flex-1 overflow-y-auto px-4 py-2">
           {comments.map((comment) => (
-            <div key={comment.id} className="mb-4">
+            <div key={comment._id} className="mb-4">
               {/* Main comment */}
               <div className="flex items-start gap-3 mb-2">
                 <img
                   src={comment.user.avatar}
-                  alt={comment.user.username}
+                  alt={comment.user.name}
                   className="w-8 h-8 rounded-full object-cover"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-semibold text-sm text-gray-900 dark:text-white">
-                      {comment.user.username}
+                      {comment.user.name}
                     </span>
                     {comment.user.isVerified && (
                       <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
@@ -272,19 +186,12 @@ const CommentModal = ({ isOpen, onClose, post }) => {
                   </p>
                   <div className="flex items-center gap-4">
                     <button
-                      onClick={() => handleLikeComment(comment.id)}
-                      className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                    >
-                      <Heart
-                        className={`w-3 h-3 ${
-                          comment.isLiked ? "text-red-500 fill-current" : ""
-                        }`}
-                      />
-                      {comment.likes > 0 && <span>{comment.likes}</span>}
-                    </button>
-                    <button
                       onClick={() =>
-                        handleReply(comment.id, comment.user.username)
+                        handleReply(
+                          comment._id,
+                          comment.user.name,
+                          comment.user._id
+                        )
                       }
                       className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                     >
@@ -304,16 +211,16 @@ const CommentModal = ({ isOpen, onClose, post }) => {
                     <div key={reply.id} className="flex items-start gap-3">
                       <img
                         src={reply.user.avatar}
-                        alt={reply.user.username}
+                        alt={reply.user.name}
                         className="w-6 h-6 rounded-full object-cover"
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-semibold text-sm text-gray-900 dark:text-white">
-                            {reply.user.username}
+                            {reply.user.name}
                           </span>
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {reply.timestamp}
+                            {formatDateTime(reply.timestamp)}
                           </span>
                         </div>
                         <p className="text-sm text-gray-900 dark:text-white mb-2">
@@ -325,20 +232,7 @@ const CommentModal = ({ isOpen, onClose, post }) => {
                         <div className="flex items-center gap-4">
                           <button
                             onClick={() =>
-                              handleLikeComment(reply.id, true, comment.id)
-                            }
-                            className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                          >
-                            <Heart
-                              className={`w-3 h-3 ${
-                                reply.isLiked ? "text-red-500 fill-current" : ""
-                              }`}
-                            />
-                            {reply.likes > 0 && <span>{reply.likes}</span>}
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleReply(comment.id, reply.user.username)
+                              handleReply(comment._id, reply.user.username)
                             }
                             className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                           >
@@ -352,6 +246,15 @@ const CommentModal = ({ isOpen, onClose, post }) => {
               )}
             </div>
           ))}
+          {/* Load More Observer */}
+          {hasMore && (
+            <div
+              ref={observerRef}
+              className="h-10 flex justify-center items-center"
+            >
+              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
         </div>
 
         {/* Input section */}

@@ -3,6 +3,7 @@ import { formatDateTime } from "../../utils/formatDate";
 import VerifiedBadge from "../badges/VerifiedBadge";
 import usePostStore from "../../store/postStore";
 import useModalStore from "../../store/modalStore";
+import useAuthStore from "../../store/authStore";
 import {
   Heart,
   MessageCircle,
@@ -15,7 +16,7 @@ import {
   VolumeX,
 } from "lucide-react";
 
-const PostCard = ({ post }) => {
+const PostCard = ({ post, canDelete, handleDeletePost }) => {
   const [liked, setLiked] = useState(post.isHearted);
   const [disliked, setDisliked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
@@ -28,10 +29,10 @@ const PostCard = ({ post }) => {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const clickTimeout = useRef(null);
-
+  const optionsRef = useRef(null);
   const reactToPost = usePostStore((state) => state.reactToPost);
   const openCommentModal = useModalStore((state) => state.openCommentModal);
-
+  const user = useAuthStore((state) => state.user);
   useEffect(() => {
     setLiked(post.isHearted);
   }, [post.isHearted]);
@@ -98,6 +99,20 @@ const PostCard = ({ post }) => {
       setIsPausedByHold(false);
     }
   };
+  const handleClickOutside = (e) => {
+    if (optionsRef.current && !optionsRef.current.contains(e.target))
+      setShowOptions(false);
+  };
+
+  const handleOpenComments = () => {
+    openCommentModal(post._id);
+  };
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  });
 
   return (
     <div
@@ -107,7 +122,9 @@ const PostCard = ({ post }) => {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-gray-300 dark:ring-gray-600">
+          <div
+            className={`w-10 h-10 rounded-full overflow-hidden ring-2 ring-gray-300 dark:ring-gray-600 `}
+          >
             <img
               src={post.createdBy.avatar}
               alt="avatar"
@@ -127,7 +144,7 @@ const PostCard = ({ post }) => {
             </p>
           </div>
         </div>
-        <div className="relative">
+        <div ref={optionsRef} className="relative">
           <button
             onClick={() => setShowOptions(!showOptions)}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -145,6 +162,14 @@ const PostCard = ({ post }) => {
               <button className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-sm">
                 Hide
               </button>
+              {(canDelete || user?.isVerified) && (
+                <button
+                  onClick={() => handleDeletePost(post._id)}
+                  className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-sm"
+                >
+                  Delete
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -212,7 +237,7 @@ const PostCard = ({ post }) => {
               />
             </button>
             <button
-              onClick={() => openCommentModal()}
+              onClick={handleOpenComments}
               className="active:scale-125 transition-transform "
             >
               <MessageCircle className="w-7 h-7 text-gray-700 dark:text-gray-300" />
@@ -250,6 +275,7 @@ const PostCard = ({ post }) => {
           <span className="font-semibold text-gray-900 dark:text-white">
             {post.reactions.hearts.length} likes
           </span>
+
           <TrendingUp className="w-4 h-4 text-green-500" />
         </div>
 
@@ -258,14 +284,25 @@ const PostCard = ({ post }) => {
           <span className="font-semibold">{post.createdBy.username}</span>
           <span className="ml-2">{post.caption}</span>
         </div>
+        {post.taggedUsers.length > 0 &&
+          post.taggedUsers.map((taggedUser) => (
+            <div
+              key={taggedUser._id}
+              className="text-gray-900 dark:text-white mt-2"
+            >
+              <span className="font-semibold text-blue-400">
+                @{taggedUser.username}
+              </span>
+            </div>
+          ))}
 
         {/* Comments */}
-        {post.comments.length > 0 && (
+        {!post.comments.length > 0 && (
           <button
             onClick={() => setShowComments(!showComments)}
             className="text-sm text-gray-500 dark:text-gray-400 mt-2 hover:text-gray-700 dark:hover:text-gray-200"
           >
-            View all {post.comments.length} comments
+            View all 2 comments
           </button>
         )}
       </div>

@@ -8,6 +8,7 @@ const MAX_FILE_SIZE_MB = 100;
 const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req, file) => {
+    console.log(file);
     const isVideo = file.mimetype.startsWith("video");
     const format = isVideo ? undefined : "webp"; // Optional: force formats
     let folder = "uploads";
@@ -29,7 +30,6 @@ const upload = multer({
   storage,
   limits: { fileSize: MAX_FILE_SIZE_MB * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    console.log("filter applied");
     const allowedTypes = ["image/", "video/"];
     const isAllowed = allowedTypes.some((type) =>
       file.mimetype.startsWith(type)

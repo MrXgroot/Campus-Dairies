@@ -1,0 +1,92 @@
+import { create } from "zustand";
+import api from "../utils/api"; // Axios instance with baseURL
+import toast from "react-hot-toast";
+
+const useCommentStore = create((set, get) => ({
+  comments: [],
+  page: 1,
+  limit: 16,
+  hasMore: true,
+  loading: false,
+  postId: null,
+
+  // Fetch initial comments or next page
+  getComments: async (postId) => {
+    const { page, limit, hasMore, loading, comments } = get();
+    console.log("calling the code");
+    if (loading || !hasMore) return;
+
+    try {
+      set({ loading: true });
+
+      const res = await api.get(
+        `/comments/${postId}?page=${page}&limit=${limit}`
+      );
+      const newComments = res.data.comments;
+      console.log(newComments.length);
+      set((state) => ({
+        comments: [...comments, ...newComments],
+        page: page + 1,
+        hasMore: newComments.length === limit,
+        postId,
+        loading: false,
+      }));
+    } catch (err) {
+      toast.error("Failed to load comments");
+      console.log(err);
+      set({ loading: false });
+    }
+  },
+
+  // Add a new comment
+  addComment: async (postId, text) => {
+    try {
+      const res = await api.post(`/comments/${postId}`, { text });
+      const newComment = res.data;
+      console.log(newComment);
+      set((state) => ({
+        comments: [newComment, ...state.comments],
+      }));
+    } catch (err) {
+      toast.error("Failed to add comment");
+    }
+  },
+
+  // Add a reply to a specific comment
+  replyToComment: async (commentId, text, replyingTo = "") => {
+    console.log(commentId, replyingTo, text);
+    try {
+      const res = await api.post(`/comments/reply/${commentId}`, {
+        text,
+        replyingTo,
+      });
+
+      const newReply = res.data;
+
+      set((state) => ({
+        comments: state.comments.map((comment) =>
+          comment._id === commentId
+            ? {
+                ...comment,
+                replies: [...(comment.replies || []), newReply],
+              }
+            : comment
+        ),
+      }));
+    } catch (err) {
+      toast.error("Failed to reply");
+    }
+  },
+
+  // Optional: reset state when switching posts
+  resetComments: () =>
+    set({
+      comments: [],
+      page: 1,
+      hasMore: true,
+      loading: false,
+      postId: null,
+    }),
+}));
+
+export default useCommentStore;

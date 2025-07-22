@@ -34,7 +34,7 @@ exports.getMyProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, quote } = req.body;
+    const { username, quote } = req.body;
     const userId = req.user.id;
     const file = req.file;
     console.log(file, "this is the file routes");
@@ -43,7 +43,6 @@ exports.updateProfile = async (req, res) => {
 
     // If a new file is uploaded (i.e., new avatar)
     if (file) {
-      console.log(file);
       // Delete the old avatar if it exists
       if (user.avatarPublicId) {
         await cloudinary.uploader.destroy(user.avatarPublicId);
@@ -55,15 +54,30 @@ exports.updateProfile = async (req, res) => {
     }
 
     // Update name and quote
-    if (name) user.name = name;
+    if (username) user.username = username;
     if (quote) user.quote = quote;
 
     await user.save();
+    const updatedUser = await User.findById(userId)
+      .select("name username email avatar quote groups waves hearts")
+      .populate("groups", "name")
+      .lean();
 
-    const sanitizedUser = user.toObject();
-    delete sanitizedUser.password;
-    console.log(sanitizedUser);
-    res.status(200).json(sanitizedUser);
+    const [postsCount, taggedCount] = await Promise.all([
+      Post.countDocuments({ author: userId }),
+      Post.countDocuments({ tagged: userId }),
+    ]);
+
+    res.status(200).json({
+      ...updatedUser,
+      stats: {
+        postsCount,
+        taggedCount,
+        groupsCount: updatedUser.groups?.length || 0,
+        wavesCount: updatedUser.waves?.length || 0,
+        heartsCount: updatedUser.hearts?.length || 0,
+      },
+    });
   } catch (err) {
     console.error("Update profile failed:", err);
     res.status(500).json({ message: "Server error" });
@@ -95,5 +109,29 @@ exports.getTaggedPosts = async (req, res) => {
   } catch (err) {
     console.error("Fetch tagged posts failed:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.getUserList = async (req, res) => {
+  const search = req.query.search?.trim() || "";
+
+  try {
+    if (!search) {
+      return res.status(200).json([]);
+    }
+
+    const regex = new RegExp(search, "i"); // case-insensitive
+
+    const users = await User.find(
+      {
+        $or: [{ username: { $regex: regex } }, { name: { $regex: regex } }],
+      },
+      { password: 0 }
+    ).limit(10);
+
+    res.status(200).json(users);
+  } catch (err) {
+    console.error("Error in getUserList:", err);
+    res.status(500).json({ message: "Failed to fetch users" });
   }
 };

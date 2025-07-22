@@ -8,7 +8,7 @@ const useNotificationStore = create((set) => ({
 
   // ✅ Add a notification (via socket)
   addNotification: (notif) => {
-    // console.log("📩 New notification:", notif);
+    console.log("📩 New notification via socket:", notif);
     set((state) => ({
       notifications: [notif, ...state.notifications],
       hasUnread: true,
@@ -19,12 +19,11 @@ const useNotificationStore = create((set) => ({
   fetchNotifications: async () => {
     try {
       const res = await api.get("/notifications");
-      const notifs = res.data || [];
-      const anyUnread = notifs.some((n) => !n.isRead);
 
+      const notifs = res.data.notifications || [];
+      console.log(notifs);
       set({
         notifications: notifs,
-        hasUnread: anyUnread,
       });
     } catch (err) {
       console.error("Fetch notifications failed:", err);

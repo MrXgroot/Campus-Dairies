@@ -1,16 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Search, Maximize2, Minimize2, Sun, Moon } from "lucide-react";
+import useLoaderStore from "../../store/loaderStore"; // Adjust path as needed
 
 const Header = ({ searchTerm, setSearchTerm, placeholder }) => {
   const [darkMode, setDarkMode] = useState(
     localStorage.getItem("theme") === "dark"
   );
-
-  function toggleDarkMode() {
-    document.documentElement.classList.toggle("dark");
-  }
-
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const { isUploading } = useLoaderStore();
+
+  const toggleDarkMode = () => {
+    document.documentElement.classList.toggle("dark");
+    const newTheme = document.documentElement.classList.contains("dark")
+      ? "dark"
+      : "light";
+    localStorage.setItem("theme", newTheme);
+    setDarkMode(newTheme === "dark");
+  };
 
   const toggleFullScreen = () => {
     const el = document.documentElement;
@@ -60,13 +66,17 @@ const Header = ({ searchTerm, setSearchTerm, placeholder }) => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
-            placeholder={placeholder ? placeholder : "Search posts..."}
+            placeholder={placeholder || "Search posts..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
           />
         </div>
       </div>
+      {/* Upload Progress Line Loader */}
+      {isUploading && (
+        <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 animate-pulse" />
+      )}
     </div>
   );
 };

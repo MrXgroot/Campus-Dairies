@@ -4,10 +4,14 @@ const User = require("../models/User");
 const { OAuth2Client } = require("google-auth-library");
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // console.log(client);
-const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user._id, isAdmin: user.isVerified || false },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "7d",
+    }
+  );
 };
 
 // @desc    Register user
@@ -100,7 +104,7 @@ exports.googleLogin = async (req, res) => {
       });
     }
 
-    const jwtToken = generateToken(user._id);
+    const jwtToken = generateToken(user);
 
     res.status(200).json({
       user: {
@@ -130,7 +134,6 @@ exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(id).select("-password");
     if (!user) return res.status(404).json({ error: "User not found" });
-
     res.status(200).json(user);
   } catch (err) {
     console.error("GetMe error:", err);

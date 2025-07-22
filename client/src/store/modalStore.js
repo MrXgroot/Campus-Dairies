@@ -10,7 +10,7 @@ const useModalStore = create((set) => ({
   closeLoginModal: () => set({ loginModal: false }),
 
   openCommentModal: (post) => {
-    set({ showCommentModal: true });
+    set({ currentPost: post, showCommentModal: true });
   },
   closeCommentModal: () => set({ showCommentModal: false, currentPost: null }),
 

@@ -4,14 +4,14 @@ const Schema = mongoose.Schema;
 const notificationSchema = new Schema(
   {
     // Receiver of the notification
-    userId: {
+    receiver: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
 
     // Sender of the notification (can be null for system messages)
-    fromUser: {
+    sender: {
       type: Schema.Types.ObjectId,
       ref: "User",
     },
@@ -37,18 +37,18 @@ const notificationSchema = new Schema(
     },
 
     // Optional reference to post
-    postId: {
+    post: {
       type: Schema.Types.ObjectId,
       ref: "Post",
     },
 
     // Optional reference to group (for join-related events)
-    groupId: {
+    group: {
       type: Schema.Types.ObjectId,
       ref: "Group",
     },
 
-    // Whether user has read this notification
+    // Whether the notification has been read
     isRead: {
       type: Boolean,
       default: false,

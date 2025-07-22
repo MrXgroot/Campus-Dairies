@@ -1,39 +1,39 @@
-import React, { useEffect } from "react";
+import React, { useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
-import LoginRegistration from "./pages/LoginRegistration";
-import HomePage from "./pages/HomePage";
-import GroupsPage from "./pages/GroupPage";
-import GroupChatPage from "./pages/GroupChat";
-import Profile from "./pages/ProfilePage";
-import NotFound from "./pages/NotFound";
+import { Toaster } from "react-hot-toast";
+
+// Lazy-loaded pages
+const LoginRegistration = lazy(() => import("./pages/LoginRegistration"));
+const HomePage = lazy(() => import("./pages/HomePage"));
+const GroupsPage = lazy(() => import("./pages/GroupPage"));
+const GroupChatPage = lazy(() => import("./pages/GroupChat"));
+const Profile = lazy(() => import("./pages/ProfilePage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const NotificationsPage = lazy(() => import("./pages/NotificationPage"));
+
+// Non-lazy components
 import Navbar from "./components/navbar/Navbar";
-import NotificationsPage from "./pages/NotificationPage";
 import CommentModal from "./components/comment/CommentModal";
+
 import useAuthStore from "./store/authStore";
 import useNotificationStore from "./store/notificationStore";
 import useModalStore from "./store/modalStore";
-import { socket } from "./utils/socket";
 import useOnlineUserStore from "./store/onlineUserStore";
+import { socket } from "./utils/socket";
+
 const App = () => {
   const { isLoggedIn, fetchUser, token, user } = useAuthStore();
-  const addNotification = useNotificationStore(
-    (state) => state.addNotification
-  );
-  const setOnlineUsers = useOnlineUserStore((state) => state.setOnlineUsers);
-  const showCommentModal = useModalStore((state) => state.showCommentModal);
-  const closeCommentModal = useModalStore((state) => state.closeCommentModal);
+  const { addNotification } = useNotificationStore();
+  const { showCommentModal, closeCommentModal } = useModalStore();
+  const { setOnlineUsers } = useOnlineUserStore();
 
   const location = useLocation();
   const navigate = useNavigate();
-  console.log(showCommentModal);
-  // ✅ Auth & user initialization
+
   useEffect(() => {
-    if (token && !isLoggedIn) {
-      fetchUser();
-    }
+    if (token && !isLoggedIn) fetchUser();
   }, [token, isLoggedIn, fetchUser]);
 
-  // ✅ Socket registration
   useEffect(() => {
     if (user?._id) {
       socket.emit("register", {
@@ -45,26 +45,15 @@ const App = () => {
   }, [user?._id]);
 
   useEffect(() => {
-    const handleOnlineUsers = (data) => {
-      console.log("Online Users:", data); // <-- See the data here
-      setOnlineUsers(data);
-    };
+    socket.on("online-users", setOnlineUsers);
+    return () => socket.off("online-users", setOnlineUsers);
+  }, [setOnlineUsers]);
 
-    socket.on("online-users", handleOnlineUsers);
-
-    return () => socket.off("online-users", handleOnlineUsers);
-  }, []);
-
-  // ✅ Notification listener
   useEffect(() => {
-    const handler = (notif) => {
-      addNotification(notif);
-    };
-    socket.on("new-notification", handler);
-    return () => socket.off("new-notification", handler);
+    socket.on("new-notification", addNotification);
+    return () => socket.off("new-notification", addNotification);
   }, [addNotification]);
 
-  // ✅ Route redirection
   useEffect(() => {
     if (!isLoggedIn && location.pathname !== "/login") {
       navigate("/login");
@@ -75,23 +64,28 @@ const App = () => {
 
   return (
     <>
-      <Routes>
-        <Route path="/login" element={<LoginRegistration />} />
+      <Suspense
+        fallback={
+          <div className="text-center mt-20 text-black">Loading...</div>
+        }
+      >
+        <Routes>
+          <Route path="/login" element={<LoginRegistration />} />
+          {isLoggedIn && (
+            <>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/groups" element={<GroupsPage />} />
+              <Route path="/groupchat/:id" element={<GroupChatPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/profile" element={<Profile />} />
+            </>
+          )}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
 
-        {isLoggedIn && (
-          <>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/groups" element={<GroupsPage />} />
-            <Route path="/groupchat/:id" element={<GroupChatPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/profile" element={<Profile />} />
-          </>
-        )}
-
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      {showCommentModal && <CommentModal onClose={() => closeCommentModal()} />}
-
+      {showCommentModal && <CommentModal onClose={closeCommentModal} />}
+      <Toaster position="bottom-center" reverseOrder={false} />
       {isLoggedIn && location.pathname !== "/login" && <Navbar />}
     </>
   );

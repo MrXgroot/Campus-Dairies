@@ -10,7 +10,8 @@ router.put(
   upload.single("avatar"),
   profileController.updateProfile
 );
-router.get("/uploads", authMiddleware, profileController.getUploadedPosts);
-router.get("/tagged", authMiddleware, profileController.getTaggedPosts);
+// router.get("/uploads", authMiddleware, profileController.getUploadedPosts);
+// router.get("/tagged", authMiddleware, profileController.getTaggedPosts);
+router.get("/taggable", authMiddleware, profileController.getUserList);
 
 module.exports = router;

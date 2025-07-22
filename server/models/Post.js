@@ -9,6 +9,7 @@ const postSchema = new Schema(
 
     // Media
     mediaUrl: { type: String, required: true }, // Either image or video URL
+    cloudinaryPublicId: { type: String },
     type: {
       type: String,
       enum: ["image", "photo", "video"],

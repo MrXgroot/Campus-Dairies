@@ -4,7 +4,7 @@ import { Tooltip } from "react-tooltip";
 
 const VerifiedBadge = () => {
   return (
-    <div className="relative inline-flex items-center z-50 group">
+    <div className="relative inline-flex items-center z-30 group">
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

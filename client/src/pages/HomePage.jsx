@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import useOnlineUserStore from "../store/onlineUserStore";
 const HomePage = () => {
-  const [posts, setPosts] = useState([]);
   const [stories, setStories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState("all");
@@ -73,14 +72,20 @@ const HomePage = () => {
 
   const filters = ["all", "tech", "art", "food", "travel"];
 
-  const { publicPosts, fetchPublicPosts, hasMore, loading, resetPagination } =
-    usePostStore();
+  const {
+    publicPosts,
+    fetchPublicPosts,
+    hasMore,
+    loading,
+    resetPagination,
+    deleteUploadedPost,
+  } = usePostStore();
   const onlineUsers = useOnlineUserStore((state) => state.onlineUsers);
   useEffect(() => {
     resetPagination();
     fetchPublicPosts();
   }, []);
-  console.log(onlineUsers);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     setTimeout(() => {
@@ -88,13 +93,16 @@ const HomePage = () => {
       setRefreshing(false);
     }, 1000);
   };
+  const handleDeletePost = (postId) => {
+    deleteUploadedPost(postId);
+  };
 
-  const filteredPosts = posts.filter((post) => {
+  const filteredPosts = publicPosts.filter((post) => {
     const matchesFilter =
       selectedFilter === "all" || post.category === selectedFilter;
     const matchesSearch =
-      publicPosts.caption.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      publicPosts.username.toLowerCase().includes(searchTerm.toLowerCase());
+      post.caption?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.username?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -141,7 +149,7 @@ const HomePage = () => {
 
       {/* Posts Feed */}
       <div className="max-w-md mx-auto pb-20">
-        {publicPosts.map((post, index) => (
+        {filteredPosts.map((post, index) => (
           <div
             key={post._id}
             className="opacity-0 animate-fade-in"
@@ -150,7 +158,7 @@ const HomePage = () => {
             }}
           >
             {/* <AdvancedPost post={post} /> */}
-            <PostCard post={post} />
+            <PostCard post={post} handleDeletePost={handleDeletePost} />
           </div>
         ))}
 
@@ -257,51 +265,6 @@ const FilterSection = ({ filters, selectedFilter, setSelectedFilter }) => (
     </div>
   </div>
 );
-
-const CreatePostModal = ({ show, onClose }) => {
-  if (!show) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md transform transition-all duration-300 scale-100">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            Create Post
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all"
-          >
-            <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <textarea
-            placeholder="What's on your mind?"
-            rows="3"
-            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white transition-all"
-          />
-
-          <div className="flex gap-4">
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors active:scale-95">
-              <Image className="w-4 h-4" />
-              Photo
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors active:scale-95">
-              <Camera className="w-4 h-4" />
-              Camera
-            </button>
-          </div>
-
-          <button className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold hover:from-blue-600 hover:to-purple-600 transition-all active:scale-95">
-            Share Post
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const FloatingActionButton = ({ onClick }) => (
   <button

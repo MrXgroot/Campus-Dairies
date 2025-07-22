@@ -10,7 +10,6 @@ const NotificationsPage = () => {
 
   useEffect(() => {
     fetchNotifications();
-    markAllAsRead();
   }, []);
 
   const handleAcceptJoin = async (notif) => {
@@ -19,8 +18,8 @@ const NotificationsPage = () => {
     acceptJoinRequest(groupId, userId);
     fetchJoinedGroups();
   };
-
-  if (!notifications.length) {
+  console.log(notifications.length);
+  if (notifications.length == 0) {
     return (
       <div className="flex items-center justify-center h-[70vh] text-gray-500 dark:text-gray-400 text-center">
         No notifications to show 📭
@@ -43,7 +42,7 @@ const NotificationsPage = () => {
             <div className="flex-1">
               <p className="text-sm text-gray-700 dark:text-gray-100 leading-snug">
                 <span className="font-semibold text-blue-600 dark:text-blue-300">
-                  {notif.fromUser?.username || "Someone"}
+                  {notif.sender?.username || "Someone"}
                 </span>{" "}
                 {notif.message}
               </p>

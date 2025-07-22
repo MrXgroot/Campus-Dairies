@@ -2,9 +2,13 @@ const Post = require("../models/Post");
 const Group = require("../models/Group");
 const User = require("../models/User");
 const Comment = require("../models/Comment");
+const cloudinary = require("../config/cloudinary");
+const mongoose = require("mongoose");
+const Notification = require("../models/Notification");
+const io = require("../socket");
+
 exports.getMyPosts = async (req, res) => {
   const user = req.user;
-  console.log("usernaem", user);
   if (!user) {
     return res.status(404).json({ error: "No user found" });
   }
@@ -45,41 +49,53 @@ exports.getTaggedPosts = async (req, res) => {
 // @desc    Upload a photo or video post
 // @route   POST /api/posts/upload
 // @access  Private
+
 exports.uploadPost = async (req, res) => {
   const { caption, groupId, mood } = req.body;
   const userId = req.user.id;
   const file = req.file;
-  console.log("inside the controller");
+
   if (!file || !file.path) {
-    return res.status(400).json({ error: "File upload failed" });
+    return res.status(400).json({ error: "File upload failed..." });
   }
+
+  const uploadedPublicId = req.file.filename; // needed for cleanup
 
   try {
     if (!groupId) {
+      await cloudinary.uploader.destroy(uploadedPublicId); // cleanup
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // ✅ Safely parse taggedUsers
     let taggedUsers = [];
     if (req.body.taggedUsers) {
       try {
         const parsed = JSON.parse(req.body.taggedUsers);
         if (Array.isArray(parsed)) {
           taggedUsers = parsed.filter((id) =>
-            require("mongoose").Types.ObjectId.isValid(id)
+            mongoose.Types.ObjectId.isValid(id)
           );
+        } else {
+          await cloudinary.uploader.destroy(uploadedPublicId);
+          return res
+            .status(400)
+            .json({ error: "taggedUsers must be an array" });
         }
       } catch (err) {
+        await cloudinary.uploader.destroy(uploadedPublicId);
         return res.status(400).json({ error: "Invalid taggedUsers format" });
       }
     }
 
-    // ✅ Group membership check
     if (groupId !== "public") {
       const group = await Group.findById(groupId);
-      if (!group) return res.status(404).json({ error: "Group not found" });
+      if (!group) {
+        await cloudinary.uploader.destroy(uploadedPublicId);
+        return res.status(404).json({ error: "Group not found" });
+      }
 
       if (!group.members.includes(userId)) {
+        await cloudinary.uploader.destroy(uploadedPublicId);
         return res
           .status(403)
           .json({ error: "You are not a member of this group" });
@@ -90,6 +106,7 @@ exports.uploadPost = async (req, res) => {
 
     const newPost = await Post.create({
       mediaUrl: file.path,
+      cloudinaryPublicId: uploadedPublicId,
       type: isVideo ? "video" : "image",
       caption,
       mood,
@@ -97,10 +114,51 @@ exports.uploadPost = async (req, res) => {
       groupId,
       taggedUsers,
     });
-    console.log(newPost);
-    res.status(201).json(newPost);
+
+    const populatedPost = await Post.findById(newPost._id)
+      .populate("createdBy", "username avatar isVerified")
+      .populate("taggedUsers", "username avatar")
+      .lean();
+
+    // Create notifications
+    if (taggedUsers.length > 0) {
+      const notifications = taggedUsers.map((taggedUserId) => ({
+        receiver: taggedUserId,
+        sender: req.user.id,
+        type: "tag",
+        message: `${populatedPost.createdBy.username} tagged you in a post`,
+        post: newPost._id,
+      }));
+      await Notification.insertMany(notifications);
+    }
+
+    const enrichedPost = {
+      ...populatedPost,
+      isHearted: populatedPost.reactions?.hearts?.some(
+        (id) => id.toString() === userId
+      ),
+      isWaved: populatedPost.reactions?.waves?.some(
+        (id) => id.toString() === userId
+      ),
+      isLaughed: populatedPost.reactions?.laughs?.some(
+        (id) => id.toString() === userId
+      ),
+      isReported: populatedPost.reports?.some((id) => id.toString() === userId),
+      totalHearts: populatedPost.reactions?.hearts?.length || 0,
+      totalWaves: populatedPost.reactions?.waves?.length || 0,
+      totalLaughs: populatedPost.reactions?.laughs?.length || 0,
+      totalReports: populatedPost.reports?.length || 0,
+    };
+
+    res.status(201).json(enrichedPost);
   } catch (err) {
     console.error("Upload post failed:", err);
+
+    // ✅ Cleanup on error
+    if (uploadedPublicId) {
+      await cloudinary.uploader.destroy(uploadedPublicId);
+    }
+
     res.status(500).json({ error: "Server error" });
   }
 };
@@ -121,7 +179,7 @@ exports.getPublicPosts = async (req, res) => {
       .lean();
 
     const filteredPosts = posts.filter(
-      (post) => !post.reports || post.reports.length <= 3
+      (post) => !post.reports || post.reports.length <= 4
     );
 
     const enrichedPosts = filteredPosts.map((post) => ({
@@ -165,7 +223,6 @@ exports.reactToPost = async (req, res) => {
 
     await post.save();
 
-    console.log(post);
     res.status(200).json({ message: "Reaction updated", post });
   } catch (err) {
     console.error("React error:", err);
@@ -234,5 +291,36 @@ exports.reportPost = async (req, res) => {
   } catch (err) {
     console.error("Report post error:", err);
     res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.deletePost = async (req, res) => {
+  const postId = req.params.id;
+  const userId = req.user.id;
+  const isAdmin = req.user.isAdmin;
+
+  try {
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    if (post.createdBy.toString() !== userId && !isAdmin) {
+      console.log("can delete the post");
+    }
+    if (post.createdBy.toString() !== userId) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+    if (post.cloudinaryPublicId) {
+      await cloudinary.uploader.destroy(post.cloudinaryPublicId, {
+        resource_type: post.type === "video" ? "video" : "image",
+      });
+    }
+    await Comment.deleteMany({ _id: { $in: post.comments } });
+    await Post.findByIdAndDelete(postId);
+    res
+      .status(200)
+      .json({ success: true, message: "Post deleted successfully" });
+  } catch (err) {
+    console.error("Delete Post Error", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 };

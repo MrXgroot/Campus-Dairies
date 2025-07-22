@@ -33,492 +33,6 @@ import PostCard from "../components/post/PostCard";
 import PostModal from "../components/postModal/PostModal";
 import useGroupStore from "../store/groupStore";
 import usePostStore from "../store/postStore";
-// Mock data
-const mockGroupData = {
-  _id: "g001",
-  name: "MCA Batch 2024",
-  description:
-    "Official group for MCA students batch 2024. Share your memories, doubts, and experiences!",
-  isPrivate: true,
-  avatar:
-    "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=400&fit=crop&crop=face",
-  coverImage:
-    "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=300&fit=crop",
-  createdBy: {
-    _id: "u001",
-    name: "Sukesh Kumar",
-    avatar:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-  },
-  createdAt: "2024-06-15T10:00:00Z",
-  location: "Christ University, Bangalore",
-  members: [
-    {
-      _id: "u001",
-      name: "Sukesh Kumar",
-      avatar:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-      role: "admin",
-    },
-    {
-      _id: "u002",
-      name: "Divya Sharma",
-      avatar:
-        "https://images.unsplash.com/photo-1494790108755-2616b88c3f96?w=100&h=100&fit=crop&crop=face",
-      role: "member",
-    },
-    {
-      _id: "u003",
-      name: "Rahul Patel",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-      role: "member",
-    },
-    {
-      _id: "u004",
-      name: "Priya Singh",
-      avatar:
-        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-      role: "member",
-    },
-    {
-      _id: "u005",
-      name: "Arjun Reddy",
-      avatar:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face",
-      role: "member",
-    },
-  ],
-  stats: {
-    totalPosts: 47,
-    totalVideos: 12,
-    totalMembers: 18,
-    topContributors: [
-      {
-        _id: "u002",
-        name: "Divya Sharma",
-        count: 8,
-        avatar:
-          "https://images.unsplash.com/photo-1494790108755-2616b88c3f96?w=100&h=100&fit=crop&crop=face",
-      },
-      {
-        _id: "u001",
-        name: "Sukesh Kumar",
-        count: 6,
-        avatar:
-          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-      },
-      {
-        _id: "u003",
-        name: "Rahul Patel",
-        count: 5,
-        avatar:
-          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-      },
-    ],
-  },
-};
-
-const mockPosts = [
-  {
-    _id: "1",
-    caption:
-      "Beautiful sunset from my coding session today! 🌅 #coding #nature #productivity",
-    comments: [],
-    createdAt: "2025-07-15T14:00:00.000Z",
-    updatedAt: "2025-07-15T14:00:00.000Z",
-    createdBy: {
-      _id: "user1",
-      username: "tech_explorer",
-      avatar:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-      isVerified: true,
-    },
-    groupId: "public",
-    isHearted: false,
-    isLaughed: false,
-    isWaved: false,
-    mediaUrl:
-      "https://images.unsplash.com/photo-1518085901-5f5f2a75e5e5?w=800&h=600&fit=crop",
-    mood: "❤️",
-    reactions: {
-      hearts: [],
-      waves: [],
-      laughs: [],
-    },
-    taggedUsers: [],
-    totalHearts: 234,
-    totalLaughs: 0,
-    totalWaves: 0,
-    type: "image",
-    verified: false,
-    __v: 1,
-  },
-  {
-    _id: "2",
-    caption:
-      "New artwork in progress! What do you think? 🎨 #art #creativity #design",
-    comments: [],
-    createdAt: "2025-07-15T12:00:00.000Z",
-    updatedAt: "2025-07-15T12:00:00.000Z",
-    createdBy: {
-      _id: "user2",
-      username: "creative_mind",
-      avatar:
-        "https://images.unsplash.com/photo-1494790108755-2616b332b1b4?w=100&h=100&fit=crop&crop=face",
-      isVerified: false,
-    },
-    groupId: "public",
-    isHearted: false,
-    isLaughed: false,
-    isWaved: false,
-    mediaUrl:
-      "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=800&h=600&fit=crop",
-    mood: "🎨",
-    reactions: {
-      hearts: [],
-      waves: [],
-      laughs: [],
-    },
-    taggedUsers: [],
-    totalHearts: 567,
-    totalLaughs: 0,
-    totalWaves: 0,
-    type: "image",
-    verified: false,
-    __v: 1,
-  },
-  {
-    _id: "3",
-    caption:
-      "Homemade pasta night! Recipe in comments 🍝 #cooking #homemade #delicious",
-    comments: [],
-    createdAt: "2025-07-15T10:00:00.000Z",
-    updatedAt: "2025-07-15T10:00:00.000Z",
-    createdBy: {
-      _id: "user3",
-      username: "food_enthusiast",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-      isVerified: true,
-    },
-    groupId: "public",
-    isHearted: false,
-    isLaughed: false,
-    isWaved: false,
-    mediaUrl:
-      "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=800&h=600&fit=crop",
-    mood: "🍝",
-    reactions: {
-      hearts: [],
-      waves: [],
-      laughs: [],
-    },
-    taggedUsers: [],
-    totalHearts: 892,
-    totalLaughs: 0,
-    totalWaves: 0,
-    type: "image",
-    verified: false,
-    __v: 1,
-  },
-  {
-    _id: "4",
-    caption:
-      "Mountain hiking adventure! The view was absolutely breathtaking 🏔️ #travel #hiking #mountains",
-    comments: [],
-    createdAt: "2025-07-14T14:00:00.000Z",
-    updatedAt: "2025-07-14T14:00:00.000Z",
-    createdBy: {
-      _id: "user4",
-      username: "travel_diary",
-      avatar:
-        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-      isVerified: false,
-    },
-    groupId: "public",
-    isHearted: false,
-    isLaughed: false,
-    isWaved: false,
-    mediaUrl:
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop",
-    mood: "🏔️",
-    reactions: {
-      hearts: [],
-      waves: [],
-      laughs: [],
-    },
-    taggedUsers: [],
-    totalHearts: 1234,
-    totalLaughs: 0,
-    totalWaves: 0,
-    type: "image",
-    verified: false,
-    __v: 1,
-  },
-];
-
-const CreatePostModal = ({ isOpen, onClose, onCreatePost }) => {
-  const [postContent, setPostContent] = useState("");
-  const [selectedMood, setSelectedMood] = useState("");
-  const [postType, setPostType] = useState("text");
-  const [mediaPreview, setMediaPreview] = useState("");
-
-  const moods = [
-    "😊",
-    "😍",
-    "🤔",
-    "😎",
-    "🥳",
-    "📚",
-    "💻",
-    "🎉",
-    "🤯",
-    "🚀",
-    "❤️",
-    "👍",
-  ];
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (postContent.trim()) {
-      onCreatePost({
-        type: postType,
-        caption: postContent,
-        mood: selectedMood,
-        mediaUrl: mediaPreview,
-      });
-      setPostContent("");
-      setSelectedMood("");
-      setPostType("text");
-      setMediaPreview("");
-      onClose();
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b border-gray-800 sticky top-0 bg-gray-900">
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-800 rounded-full"
-          >
-            <X className="w-5 h-5 text-white" />
-          </button>
-          <h2 className="text-lg font-semibold text-white">Create Post</h2>
-          <button
-            onClick={handleSubmit}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
-          >
-            Post
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <img
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"
-              alt="Your avatar"
-              className="w-10 h-10 rounded-full object-cover"
-            />
-            <div>
-              <p className="text-white font-medium">Sukesh Kumar</p>
-              <p className="text-gray-400 text-sm">Posting to MCA Batch 2024</p>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <textarea
-              value={postContent}
-              onChange={(e) => setPostContent(e.target.value)}
-              placeholder="What's on your mind?"
-              rows="4"
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors resize-none"
-              required
-            />
-          </div>
-
-          <div className="flex gap-4 mb-4">
-            <button
-              type="button"
-              onClick={() => setPostType("text")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                postType === "text"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              Text
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setPostType("photo");
-                setMediaPreview(
-                  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop"
-                );
-              }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                postType === "photo"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-              }`}
-            >
-              {/* <Image className="w-4 h-4" /> */}
-              Photo
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setPostType("video");
-                setMediaPreview(
-                  "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&h=400&fit=crop"
-                );
-              }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                postType === "video"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-              }`}
-            >
-              <Video className="w-4 h-4" />
-              Video
-            </button>
-          </div>
-
-          {(postType === "photo" || postType === "video") && mediaPreview && (
-            <div className="mb-4 relative">
-              <img
-                src={mediaPreview}
-                alt="Preview"
-                className="w-full h-48 object-cover rounded-lg"
-              />
-              {postType === "video" && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg">
-                  <Video className="w-12 h-12 text-white" />
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="mb-4">
-            <p className="text-white font-medium mb-2">Choose a mood</p>
-            <div className="flex flex-wrap gap-2">
-              {moods.map((mood) => (
-                <button
-                  key={mood}
-                  type="button"
-                  onClick={() => setSelectedMood(mood)}
-                  className={`p-2 rounded-lg transition-colors ${
-                    selectedMood === mood
-                      ? "bg-purple-600"
-                      : "bg-gray-800 hover:bg-gray-700"
-                  }`}
-                >
-                  <span className="text-xl">{mood}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-const CommentModal = ({ isOpen, onClose, post, onAddComment }) => {
-  const [commentText, setCommentText] = useState("");
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (commentText.trim()) {
-      onAddComment(post._id, commentText);
-      setCommentText("");
-    }
-  };
-
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [onClose]);
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black bg-opacity-60">
-      <div className="bg-gray-900 w-full max-w-lg rounded-t-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800 sticky top-0 bg-gray-900 z-10">
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-800 rounded-full"
-          >
-            <X className="w-5 h-5 text-white" />
-          </button>
-          <h2 className="text-lg font-semibold text-white">Comments</h2>
-          <div className="w-10" />
-        </div>
-
-        {/* Comments */}
-        <div className="p-4">
-          <div className="space-y-4 mb-4">
-            {post.comments.map((comment) => (
-              <div key={comment._id} className="flex items-start gap-3">
-                <img
-                  src={comment.createdBy.avatar}
-                  alt={comment.createdBy.name}
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-                <div className="flex-1">
-                  <div className="bg-gray-800 rounded-lg px-3 py-2">
-                    <p className="text-white font-medium text-sm">
-                      {comment.createdBy.name}
-                    </p>
-                    <p className="text-gray-300 text-sm">{comment.text}</p>
-                  </div>
-                  <p className="text-gray-500 text-xs mt-1">
-                    {new Date(comment.createdAt).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Add Comment */}
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <img
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face"
-              alt="Your avatar"
-              className="w-8 h-8 rounded-full object-cover"
-            />
-            <div className="flex-1 flex gap-2">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Add a comment..."
-                className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors text-sm"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const GroupChatPage = () => {
   // const [posts, setPosts] = useState(mockPosts);
@@ -534,7 +48,7 @@ const GroupChatPage = () => {
 
   const fetchGroupPosts = usePostStore((state) => state.fetchGroupPosts);
   const groupPosts = usePostStore((state) => state.groupPosts);
-
+  const deleteUploadedPost = usePostStore((state) => state.deleteUploadedPost);
   useEffect(() => {
     fetchGroupById(id);
     fetchGroupPosts(id);
@@ -564,16 +78,17 @@ const GroupChatPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-white">
+    <div className="min-h-screen bg-gray-100 dark:bg-black text-white">
       {/* Header */}
-      <div className="bg-black border-b border-gray-800 sticky top-0 z-40">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
         <div className="flex items-center justify-between p-4">
+          {/* Left Side - Back Button + Group Info */}
           <div className="flex items-center gap-3">
             <button
               onClick={handleBackButton}
-              className="p-2 hover:bg-gray-800 rounded-full"
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
             >
-              <ArrowLeft className="w-5 h-5 text-white" />
+              <ArrowLeft className="w-5 h-5 text-gray-800 dark:text-white" />
             </button>
             <img
               src={groupDetails.groupImage}
@@ -581,30 +96,32 @@ const GroupChatPage = () => {
               className="w-8 h-8 rounded-full object-cover"
             />
             <div>
-              <h1 className="text-lg font-semibold text-white">
+              <h1 className="text-lg font-semibold text-black dark:text-white">
                 {groupDetails.name}
               </h1>
-              <p className="text-gray-400 text-sm">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {groupDetails.stats.totalMembers} members
               </p>
             </div>
           </div>
+
+          {/* Right Side - Users & More */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowGroupDetails(true)}
-              className="p-2 hover:bg-gray-800 rounded-full"
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
             >
-              <Users className="w-5 h-5 text-white" />
+              <Users className="w-5 h-5 text-gray-800 dark:text-white" />
             </button>
-            <button className="p-2 hover:bg-gray-800 rounded-full">
-              <MoreHorizontal className="w-5 h-5 text-white" />
+            <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+              <MoreHorizontal className="w-5 h-5 text-gray-800 dark:text-white" />
             </button>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-black border-b border-gray-800 sticky top-[72px] z-30">
+      <div className="flex dark:bg-gray-800 bg-white border-b border-gray-100 dark:border-gray-800 sticky top-[72px] z-50">
         <button
           onClick={() => setActiveTab("posts")}
           className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
@@ -640,14 +157,14 @@ const GroupChatPage = () => {
       {/* Content */}
       <div className="pb-6">
         {activeTab === "posts" && (
-          <div className="space-y-4  py-3">
+          <div className="space-y-4 py-3">
             {groupPosts.length === 0 ? (
               <div className="text-center py-20">
-                <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">
+                <FileText className="w-16 h-16 text-gray-500 dark:text-gray-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
                   No posts yet
                 </h3>
-                <p className="text-gray-400 text-sm mb-4">
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
                   Be the first to share something!
                 </p>
                 <button
@@ -664,6 +181,7 @@ const GroupChatPage = () => {
                   post={post}
                   onReact={handleReact}
                   onComment={handleComment}
+                  handleDeletePost={(postId) => deleteUploadedPost(postId)}
                 />
               ))
             )}
@@ -673,7 +191,7 @@ const GroupChatPage = () => {
         {activeTab === "members" && (
           <div className="p-4">
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-white mb-3">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
                 Top Contributors
               </h3>
               <div className="space-y-3">
@@ -682,7 +200,7 @@ const GroupChatPage = () => {
                     (contributor, index) => (
                       <div
                         key={contributor._id}
-                        className="flex items-center justify-between p-3 bg-gray-900 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-900 rounded-lg"
                       >
                         <div className="flex items-center gap-3">
                           <div className="relative">
@@ -698,16 +216,16 @@ const GroupChatPage = () => {
                             )}
                           </div>
                           <div>
-                            <p className="text-white font-medium">
+                            <p className="text-gray-800 dark:text-white font-medium">
                               {contributor.name}
                             </p>
-                            <p className="text-gray-400 text-sm">
+                            <p className="text-gray-600 dark:text-gray-400 text-sm">
                               {contributor.count} posts
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-purple-400 font-semibold">
+                          <p className="text-purple-600 dark:text-purple-400 font-semibold">
                             #{index + 1}
                           </p>
                         </div>
@@ -718,7 +236,7 @@ const GroupChatPage = () => {
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-white mb-3">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
                 All Members
               </h3>
               <ShowMembersModal group={groupDetails} />
@@ -746,23 +264,26 @@ const GroupChatPage = () => {
 export default GroupChatPage;
 
 const GroupDetailsModal = ({ group, setShowGroupDetails }) => {
-  console.log(group);
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b border-gray-800 sticky top-0 bg-gray-900">
+    <div className="fixed inset-0 bg-black/60 dark:bg-black/80 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10">
           <button
             onClick={() => setShowGroupDetails(false)}
-            className="p-2 hover:bg-gray-800 rounded-full"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-5 h-5 text-gray-700 dark:text-white" />
           </button>
-          <h2 className="text-lg font-semibold text-white">Group Details</h2>
-          <button className="p-2 hover:bg-gray-800 rounded-full">
-            <Settings className="w-5 h-5 text-white" />
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Group Details
+          </h2>
+          <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
+            <Settings className="w-5 h-5 text-gray-700 dark:text-white" />
           </button>
         </div>
 
+        {/* Content */}
         <div className="p-4">
           <div className="text-center mb-6">
             <img
@@ -770,64 +291,69 @@ const GroupDetailsModal = ({ group, setShowGroupDetails }) => {
               alt={group.name}
               className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
             />
-            <h3 className="text-xl font-bold text-white mb-2">{group.name}</h3>
-            <p className="text-gray-400 text-sm mb-4">{group.description}</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              {group.name}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+              {group.description}
+            </p>
             <div className="flex justify-center gap-6">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">
-                  {group.stats.totalMembers}
-                </p>
-                <p className="text-gray-400 text-sm">Members</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">
-                  {group.stats.totalPosts}
-                </p>
-                <p className="text-gray-400 text-sm">Posts</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">
-                  {group.stats.totalVideos}
-                </p>
-                <p className="text-gray-400 text-sm">Videos</p>
-              </div>
+              {[
+                { label: "Members", value: group.stats.totalMembers },
+                { label: "Posts", value: group.stats.totalPosts },
+                { label: "Videos", value: group.stats.totalVideos },
+              ].map((stat, index) => (
+                <div key={index} className="text-center">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {stat.value}
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    {stat.label}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
 
+          {/* Actions */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
-              <Users className="w-5 h-5 text-purple-400" />
-              <div>
-                <p className="text-white font-medium">View Members</p>
-                <p className="text-gray-400 text-sm">See all group members</p>
+            {[
+              {
+                icon: <Users className="w-5 h-5 text-purple-500" />,
+                title: "View Members",
+                desc: "See all group members",
+              },
+              {
+                icon: <UserPlus className="w-5 h-5 text-blue-500" />,
+                title: "Invite Members",
+                desc: "Invite friends to join",
+              },
+              {
+                icon: <FileText className="w-5 h-5 text-green-500" />,
+                title: "Group Rules",
+                desc: "View group guidelines",
+              },
+              {
+                icon: <Settings className="w-5 h-5 text-gray-500" />,
+                title: "Group Settings",
+                desc: "Manage group preferences",
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg"
+              >
+                {item.icon}
+                <div>
+                  <p className="text-gray-900 dark:text-white font-medium">
+                    {item.title}
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    {item.desc}
+                  </p>
+                </div>
               </div>
-            </div>
-
-            <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
-              <UserPlus className="w-5 h-5 text-blue-400" />
-              <div>
-                <p className="text-white font-medium">Invite Members</p>
-                <p className="text-gray-400 text-sm">Invite friends to join</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
-              <FileText className="w-5 h-5 text-green-400" />
-              <div>
-                <p className="text-white font-medium">Group Rules</p>
-                <p className="text-gray-400 text-sm">View group guidelines</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
-              <Settings className="w-5 h-5 text-gray-400" />
-              <div>
-                <p className="text-white font-medium">Group Settings</p>
-                <p className="text-gray-400 text-sm">
-                  Manage group preferences
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
@@ -837,16 +363,25 @@ const GroupDetailsModal = ({ group, setShowGroupDetails }) => {
 
 const AboutGroupModal = ({ group }) => {
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6 bg-white dark:bg-gray-950 rounded-lg">
+      {/* About Section */}
       <div>
-        <h3 className="text-lg font-semibold text-white mb-3">About</h3>
-        <p className="text-gray-300 leading-relaxed">{group.description}</p>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+          About
+        </h3>
+        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+          {group.description}
+        </p>
       </div>
 
+      {/* Group Info */}
       <div>
-        <h3 className="text-lg font-semibold text-white mb-3">Group Info</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+          Group Info
+        </h3>
         <div className="space-y-3">
-          <div className="flex items-center gap-3 p-3 bg-gray-900 rounded-lg">
+          {/* Privacy Info */}
+          <div className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg">
             <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
               {group.isPrivate ? (
                 <Lock className="w-5 h-5 text-white" />
@@ -855,10 +390,10 @@ const AboutGroupModal = ({ group }) => {
               )}
             </div>
             <div>
-              <p className="text-white font-medium">
+              <p className="text-gray-900 dark:text-white font-medium">
                 {group.isPrivate ? "Private" : "Public"} Group
               </p>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 {group.isPrivate
                   ? "Only members can see posts"
                   : "Anyone can see posts"}
@@ -866,27 +401,33 @@ const AboutGroupModal = ({ group }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 p-3 bg-gray-900 rounded-lg">
+          {/* Created Date */}
+          <div className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg">
             <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
               <Calendar className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-white font-medium">Created</p>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-900 dark:text-white font-medium">
+                Created
+              </p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 {new Date(group.createdAt).toLocaleDateString()}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 p-3 bg-gray-900 rounded-lg">
+          {/* Creator Info */}
+          <div className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg">
             <img
               src={group.createdBy.avatar}
               alt={group.createdBy.username}
               className="w-10 h-10 rounded-full object-cover"
             />
             <div>
-              <p className="text-white font-medium">Created by</p>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-900 dark:text-white font-medium">
+                Created by
+              </p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
                 {group.createdBy.username}
               </p>
             </div>
@@ -894,56 +435,52 @@ const AboutGroupModal = ({ group }) => {
         </div>
       </div>
 
+      {/* Group Rules */}
       <div>
-        <h3 className="text-lg font-semibold text-white mb-3">Group Rules</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+          Group Rules
+        </h3>
         <div className="space-y-2">
-          <div className="p-3 bg-gray-900 rounded-lg">
-            <p className="text-white text-sm">
-              1. Be respectful to all members
-            </p>
-          </div>
-          <div className="p-3 bg-gray-900 rounded-lg">
-            <p className="text-white text-sm">
-              2. No spam or promotional content
-            </p>
-          </div>
-          <div className="p-3 bg-gray-900 rounded-lg">
-            <p className="text-white text-sm">
-              3. Keep posts relevant to the group
-            </p>
-          </div>
-          <div className="p-3 bg-gray-900 rounded-lg">
-            <p className="text-white text-sm">4. No inappropriate content</p>
-          </div>
+          {[
+            "Be respectful to all members",
+            "No spam or promotional content",
+            "Keep posts relevant to the group",
+            "No inappropriate content",
+          ].map((rule, idx) => (
+            <div
+              key={idx}
+              className="p-3 bg-gray-100 dark:bg-gray-900 rounded-lg"
+            >
+              <p className="text-gray-800 dark:text-white text-sm">
+                {idx + 1}. {rule}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 };
+
 const ShowMembersModal = ({ group }) => {
-  // Combine all users and determine their roles
   const renderMembers = () => {
     const memberMap = new Map();
 
-    // Add moderators first (they may also be members)
     group.moderators.forEach((mod) => {
       memberMap.set(mod._id, { ...mod, role: "moderator" });
     });
 
-    // Add members (don't override moderator role if already added)
     group.members.forEach((mem) => {
       if (!memberMap.has(mem._id)) {
         memberMap.set(mem._id, { ...mem, role: "member" });
       }
     });
 
-    // Admin from createdBy
     memberMap.set(group.createdBy._id, {
       ...group.createdBy,
       role: "admin",
     });
 
-    // Remove duplicates and convert to array
     return Array.from(memberMap.values());
   };
 
@@ -954,7 +491,7 @@ const ShowMembersModal = ({ group }) => {
       {allMembers.map((member) => (
         <div
           key={member._id}
-          className="flex items-center justify-between p-3 bg-gray-900 rounded-lg"
+          className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 border dark:border-gray-800 border-gray-200 rounded-lg"
         >
           <div className="flex items-center gap-3">
             <img
@@ -964,8 +501,12 @@ const ShowMembersModal = ({ group }) => {
               className="w-10 h-10 rounded-full object-cover"
             />
             <div>
-              <p className="text-white font-medium">{member.username}</p>
-              <p className="text-gray-400 text-sm capitalize">{member.role}</p>
+              <p className="text-black dark:text-white font-medium">
+                {member.username}
+              </p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm capitalize">
+                {member.role}
+              </p>
             </div>
           </div>
           {member.role === "admin" && (

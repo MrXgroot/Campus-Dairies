@@ -1,10 +1,8 @@
 import { create } from "zustand";
 import api from "../utils/api";
-
+import toast from "react-hot-toast";
 const useProfileStore = create((set) => ({
   profile: null,
-  posts: [],
-  tagged: [],
   loading: true,
 
   // Get logged-in user's profile
@@ -36,27 +34,6 @@ const useProfileStore = create((set) => ({
       console.error("Update profile failed:", err);
     } finally {
       set({ loading: false });
-    }
-  },
-
-  // Get user's uploaded posts
-  fetchUploadedPosts: async () => {
-    try {
-      const res = await api.get("/posts/my-uploads");
-      console.log(res.data);
-      set({ posts: res.data });
-    } catch (err) {
-      console.error("Fetch uploaded posts failed:", err);
-    }
-  },
-
-  // Get posts user is tagged in
-  fetchTaggedPosts: async () => {
-    try {
-      const res = await api.get("/posts/tagged");
-      set({ tagged: res.data });
-    } catch (err) {
-      console.error("Fetch tagged posts failed:", err);
     }
   },
 
