@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:3000/api", // or your production URL
+  baseURL: "https://campus-dairies.onrender.com/api", // or your production URL
   withCredentials: true,
 });
 
