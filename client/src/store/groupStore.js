@@ -68,9 +68,12 @@ const useGroupStore = create((set, get) => ({
     }
   },
 
-  acceptJoinRequest: async (groupId, userId) => {
+  acceptJoinRequest: async (groupId, userId, notificationId) => {
     try {
-      const res = await api.post(`/groups/${groupId}/accept`, { userId });
+      const res = await api.post(`/groups/${groupId}/accept`, {
+        userId,
+        notificationId,
+      });
       console.log("Join request accepted:", res.data);
       await get().fetchGroupDetails(groupId);
     } catch (err) {

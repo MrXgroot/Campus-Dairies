@@ -13,5 +13,5 @@ router.put(
 // router.get("/uploads", authMiddleware, profileController.getUploadedPosts);
 // router.get("/tagged", authMiddleware, profileController.getTaggedPosts);
 router.get("/taggable", authMiddleware, profileController.getUserList);
-
+router.post("/wave/:id", authMiddleware, profileController.sendWaveToUser);
 module.exports = router;

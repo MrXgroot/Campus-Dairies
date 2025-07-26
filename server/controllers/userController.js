@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const Post = require("../models/Post");
 const cloudinary = require("../config/cloudinary");
-
+const Notification = require("../models/Notification");
 exports.getMyProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
@@ -133,5 +133,36 @@ exports.getUserList = async (req, res) => {
   } catch (err) {
     console.error("Error in getUserList:", err);
     res.status(500).json({ message: "Failed to fetch users" });
+  }
+};
+
+exports.sendWaveToUser = async (req, res) => {
+  const id = req.params.id; // The recipient's socket ID or user ID
+  const io = req.app.get("io");
+  const userId = req.user.id;
+
+  try {
+    // Await the user fetch and use lean for performance
+    const user = await User.findById(userId).select("username avatar _id");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const notif = await Notification.create({
+      receiver: id, // ✅ This is the required field
+      sender: userId,
+      type: "wave",
+
+      message: `Waved at you`,
+    });
+
+    // Emit the wave with minimal user info
+    io.to(id).emit("new-notification", "someone waved at you");
+
+    res.status(200).json({ success: true, message: "Wave sent!" });
+  } catch (err) {
+    console.error("Error sending wave:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };

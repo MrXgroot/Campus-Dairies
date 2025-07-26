@@ -3,6 +3,7 @@ import { X, Heart, MoreVertical, Send } from "lucide-react";
 import useCommentStore from "../../store/commentStore";
 import useModalStore from "../../store/modalStore";
 import { formatDateTime } from "../../utils/formatDate";
+import moment from "moment";
 const CommentModal = ({ isOpen, onClose }) => {
   // const [comments, setComments] = useState([
   //   {
@@ -178,7 +179,7 @@ const CommentModal = ({ isOpen, onClose }) => {
                       </div>
                     )}
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {comment.timestamp}
+                      {moment(comment.createdAt).fromNow()}
                     </span>
                   </div>
                   <p className="text-sm text-gray-900 dark:text-white mb-2">
@@ -220,7 +221,7 @@ const CommentModal = ({ isOpen, onClose }) => {
                             {reply.user.name}
                           </span>
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatDateTime(reply.timestamp)}
+                            {moment(reply.createdAt).fromNow()}
                           </span>
                         </div>
                         <p className="text-sm text-gray-900 dark:text-white mb-2">

@@ -1,6 +1,5 @@
 const PostCard = ({ post }) => {
   const isVideo = post.type === "video";
-  console.log(post);
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800">
       {/* Post Header */}

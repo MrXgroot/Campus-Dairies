@@ -19,6 +19,14 @@ const useUserStore = create((set) => ({
       set({ loadingPeople: false });
     }
   },
+
+  sendWaveToUser: async (userId) => {
+    try {
+      const res = await api.post(`/users/wave/${userId}`);
+    } catch (err) {
+      console.error(err);
+    }
+  },
 }));
 
 export default useUserStore;

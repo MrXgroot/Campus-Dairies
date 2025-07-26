@@ -13,6 +13,7 @@ import SelectFilePage from "./pages/SelectFilePage";
 import EditPage from "./pages/EditPage";
 import PostModalHeader from "./PostModalHeader";
 import TagUserModal from "./TagUserModal";
+import api from "../../utils/api";
 
 // import { motion, AnimatePresence } from "framer-motion";
 //everythingg is fine jsut tagged user issue correct that afterards
@@ -34,22 +35,57 @@ const PostModal = ({ show, onClose, id = null }) => {
   const MAX_VIDEO_SIZE_MB = 50;
   const { fetchTaggableUsers, people, loadingPeople } = useUserStore();
 
-  const { compressMedia } = useMediaCompressor((compressedFile) => {
+  const { compressMedia } = useMediaCompressor(async (compressedFile) => {
     if (!compressedFile) {
       toast.error("Compression failed");
       return;
     }
-    console.log("rawFile", rawFile.size / (1024 * 1024));
-    console.log("compressed", compressedFile.size / (1024 * 1024));
-    const formData = new FormData();
-    formData.append("file", compressedFile);
-    formData.append("caption", caption);
-    formData.append("type", mediaType);
-    formData.append("groupId", groupId);
-    const taggedUsersIds = taggedUsers.map((user) => user._id);
-    formData.append("taggedUsers", JSON.stringify(taggedUsersIds));
 
-    uploadPost(formData, groupId == "public");
+    try {
+      const sigRes = await api.get(
+        `/posts/generate-signature?groupId=${groupId}`
+      );
+      const { signature, timestamp, apiKey, cloudName, folder } = sigRes.data;
+
+      const cloudForm = new FormData();
+      cloudForm.append("file", compressedFile);
+      cloudForm.append("api_key", apiKey);
+      cloudForm.append("timestamp", timestamp);
+      cloudForm.append("signature", signature);
+      cloudForm.append("folder", folder);
+
+      const cloudinaryUpload = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+        {
+          method: "POST",
+          body: cloudForm,
+        }
+      );
+
+      const result = await cloudinaryUpload.json();
+
+      if (!result.secure_url) {
+        throw new Error("Cloudinary upload Failed");
+      }
+
+      const postData = {
+        mediaUrl: result.secure_url,
+        cloudinaryPublicId: result.public_id,
+        type: result.resource_type,
+        caption,
+        mood: "❤️",
+        groupId,
+        taggedUsers: JSON.stringify(taggedUsers.map((u) => u._id)),
+        filename: result.original_filename,
+      };
+
+      // 4. Send to backend using axios
+      uploadPost(postData, groupId !== "public");
+    } catch (err) {
+      console.error("Upload failed:", err);
+      setUploading(false);
+      toast.error("Upload failed");
+    }
   });
 
   const debouncedSearch = useMemo(

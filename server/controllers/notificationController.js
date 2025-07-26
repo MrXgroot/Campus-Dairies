@@ -6,7 +6,6 @@ exports.getNotifications = async (req, res) => {
       .populate("sender", "username avatar")
       .populate("group", "name")
       .populate("post", "_id");
-
     res.status(200).json({ notifications });
   } catch (err) {
     console.error("❌ Failed to fetch notifications:", err.message);
@@ -52,10 +51,10 @@ exports.createNotification = async ({
   message = "",
   postId = null,
   groupId = null,
-  io = null,
+  req,
 }) => {
   if (receiverId.toString() === senderId.toString()) return null;
-
+  const io = req.app.get("io");
   try {
     const notification = new Notification({
       sender: senderId,
@@ -74,8 +73,8 @@ exports.createNotification = async ({
       { path: "group", select: "name" },
     ]);
 
-    // Real-time emit (if io is available and user is online)
     if (io) {
+      console.log("emiting");
       io.to(receiverId.toString()).emit("new-notification", savedNotification);
     }
 

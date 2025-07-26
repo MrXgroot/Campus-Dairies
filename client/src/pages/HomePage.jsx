@@ -4,6 +4,7 @@ import PostCard from "../components/post/PostCard";
 import PostModal from "../components/postModal/PostModal";
 import usePostStore from "../store/postStore";
 import { socket } from "../utils/socket";
+import useUserStore from "../store/userStore";
 import {
   Heart,
   MessageCircle,
@@ -30,7 +31,7 @@ const HomePage = () => {
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const observerRef = useRef();
-
+  const { sendWaveToUser } = useUserStore();
   const mockStories = [
     {
       id: "1",
@@ -121,7 +122,9 @@ const HomePage = () => {
     return () => observer.disconnect();
   }, [hasMore, loading]);
 
-  console.log(publicPosts);
+  const handleWaveToUser = (userId) => {
+    sendWaveToUser(userId);
+  };
   if (loading) {
     return <LoadingScreen />;
   }
@@ -138,7 +141,7 @@ const HomePage = () => {
       />
 
       {/* Stories */}
-      <StoriesSection stories={onlineUsers} />
+      <StoriesSection stories={onlineUsers} onClick={handleWaveToUser} />
 
       {/* Filters */}
       <FilterSection
@@ -202,7 +205,8 @@ const HomePage = () => {
   );
 };
 
-const StoriesSection = ({ stories }) => {
+const StoriesSection = ({ stories, onClick }) => {
+  console.log(stories);
   return (
     <div className="max-w-md mx-auto px-4 py-4">
       <div className="flex gap-4 overflow-x-auto scrollbar-hide">
@@ -212,7 +216,8 @@ const StoriesSection = ({ stories }) => {
             className="flex-shrink-0 text-center cursor-pointer hover:scale-105 transition-transform active:scale-95"
           >
             <div
-              className={`relative ${
+              onDoubleClick={() => onClick(story._id)}
+              className={` relative ${
                 story.isAdd
                   ? "bg-gray-200 dark:bg-gray-700"
                   : story.isViewed

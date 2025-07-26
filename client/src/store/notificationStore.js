@@ -10,9 +10,11 @@ const useNotificationStore = create((set) => ({
   addNotification: (notif) => {
     console.log("📩 New notification via socket:", notif);
     set((state) => ({
-      notifications: [notif, ...state.notifications],
       hasUnread: true,
     }));
+    if (notif.type == "wave") {
+      set({ notifications: notif });
+    }
   },
 
   // ✅ Fetch from DB

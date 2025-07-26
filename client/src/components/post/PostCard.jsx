@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { formatDateTime } from "../../utils/formatDate";
+import moment from "moment";
 import VerifiedBadge from "../badges/VerifiedBadge";
 import usePostStore from "../../store/postStore";
 import useModalStore from "../../store/modalStore";
@@ -30,13 +31,12 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
   const containerRef = useRef(null);
   const clickTimeout = useRef(null);
   const optionsRef = useRef(null);
-  const reactToPost = usePostStore((state) => state.reactToPost);
+  const reactToPost = usePostStore((state) => state.toggleLikePost);
   const openCommentModal = useModalStore((state) => state.openCommentModal);
   const user = useAuthStore((state) => state.user);
   useEffect(() => {
     setLiked(post.isHearted);
   }, [post.isHearted]);
-
   // Auto play when visible
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -60,7 +60,7 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
 
   const handleLike = () => {
     setLiked((prev) => !prev);
-    reactToPost(post._id, "hearts");
+    reactToPost(post._id);
 
     if (!liked) {
       setShowHeartAnimation(true);
@@ -140,7 +140,7 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
               {post.createdBy.isVerified && <VerifiedBadge />}
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {formatDateTime(post.updatedAt)}
+              {moment(post.createdAt).fromNow()}
             </p>
           </div>
         </div>
@@ -189,13 +189,17 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
             onMouseDown={handleLongPressStart}
             onMouseUp={handleLongPressEnd}
             onClick={handleClick}
+            draggable={false}
+            onContextMenu={(e) => e.preventDefault()}
             className="w-full h-80 object-contain cursor-pointer hover:scale-105 transition-transform"
           />
         ) : (
           <img
             src={post.mediaUrl}
             alt="Post"
+            draggable={false}
             onDoubleClick={handleDoubleClick}
+            onContextMenu={(e) => e.preventDefault()}
             className="w-full h-80 object-contain cursor-pointer hover:scale-105 transition-transform"
           />
         )}
@@ -273,7 +277,7 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
         {/* Reactions Count */}
         <div className="flex items-center gap-2 mb-2">
           <span className="font-semibold text-gray-900 dark:text-white">
-            {post.reactions.hearts.length} likes
+            {post.likes.length} likes
           </span>
 
           <TrendingUp className="w-4 h-4 text-green-500" />

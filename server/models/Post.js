@@ -37,11 +37,7 @@ const postSchema = new Schema(
     taggedUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
 
     // Reactions count
-    reactions: {
-      hearts: [{ type: Schema.Types.ObjectId, ref: "User" }],
-      waves: [{ type: Schema.Types.ObjectId, ref: "User" }],
-      laughs: [{ type: Schema.Types.ObjectId, ref: "User" }],
-    },
+    likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
     reports: [
       {
         reportedBy: { type: Schema.Types.ObjectId, ref: "User" },

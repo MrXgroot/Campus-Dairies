@@ -16,3 +16,6 @@ api.interceptors.request.use((config) => {
 });
 
 export default api;
+
+// https://campus-dairies.onrender.com/
+// http://localhost:3000

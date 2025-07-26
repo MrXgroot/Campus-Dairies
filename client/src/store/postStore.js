@@ -5,14 +5,16 @@ import useLoaderStore from "../store/loaderStore";
 const usePostStore = create((set, get) => ({
   loadingPosts: false,
   publicPosts: [],
-  groupPosts: [],
   currentPage: 1,
-  groupPage: 1,
   limit: 12,
   hasMore: true,
   hasMoreGroup: true,
   posts: [],
   tagged: [],
+  groupPostMap: {},
+  groupPageMap: {},
+  hasMoreGroupMap: {},
+  singlePost: null,
 
   // Reset public pagination state
   resetPagination: () => {
@@ -36,13 +38,12 @@ const usePostStore = create((set, get) => ({
   fetchPublicPosts: async () => {
     const { currentPage, limit, publicPosts } = get();
     set({ loadingPosts: true });
-
     try {
       const res = await api.get(
         `/posts/public?page=${currentPage}&limit=${limit}`
       );
       const newPosts = res.data;
-
+      // console.log(newPosts);
       set({
         publicPosts: [...publicPosts, ...newPosts],
         hasMore: newPosts.length === limit,
@@ -57,19 +58,37 @@ const usePostStore = create((set, get) => ({
 
   // ✅ Fetch group posts with pagination
   fetchGroupPosts: async (groupId) => {
-    const { groupPage, limit, groupPosts } = get();
+    const { groupPostMap, groupPageMap, hasMoreGroupMap, limit, loadingPosts } =
+      get();
+    const currentPosts = groupPostMap[groupId] || [];
+    const currentPage = groupPageMap[groupId] || 1;
+    const hasMore = hasMoreGroupMap[groupId] ?? true;
+
+    if (!hasMore) return;
+
     set({ loadingPosts: true });
 
+    console.log("calling posts");
     try {
       const res = await api.get(
-        `/posts/group/${groupId}?page=${groupPage}&limit=${limit}`
+        `/posts/group/${groupId}?page=${currentPage}&limit=${limit}`
       );
       const newPosts = res.data;
-
+      console.log(newPosts, "loaded");
       set({
-        groupPosts: [...groupPosts, ...newPosts],
-        hasMoreGroup: newPosts.length === limit,
-        groupPage: groupPage + 1,
+        groupPostMap: {
+          ...groupPostMap,
+          [groupId]: [...currentPosts, ...newPosts],
+        },
+
+        groupPageMap: {
+          ...groupPageMap,
+          [groupId]: currentPage + 1,
+        },
+        hasMoreGroupMap: {
+          ...hasMoreGroupMap,
+          [groupId]: newPosts.length === limit,
+        },
       });
     } catch (err) {
       console.error("Failed to fetch group posts:", err);
@@ -78,7 +97,6 @@ const usePostStore = create((set, get) => ({
     }
   },
 
-  // 🆕 Report a post (toggle like/dislike style)
   reportPost: async (postId) => {
     try {
       const res = await api.post(`/posts/${postId}/report`);
@@ -99,30 +117,33 @@ const usePostStore = create((set, get) => ({
     }
   },
 
-  // Already existing logic:
-  uploadPost: async (formData, isGroupPost) => {
-    console.log(formData);
+  uploadPost: async (postData, isGroupPost) => {
     const { setUploading } = useLoaderStore.getState();
-
     setUploading(true);
-    try {
-      const res = await api.post("/posts/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      const newPost = res.data;
-      console.log(res.data);
 
-      if (isGroupPost) {
+    try {
+      const res = await api.post("/posts/upload", postData);
+      const newPost = res.data;
+      console.log(postData.groupId, isGroupPost);
+      if (isGroupPost && postData.groupId) {
+        console.log("updated");
+        const { groupPostMap } = get();
+        const groupId = postData.groupId;
+
+        const existingPosts = groupPostMap[groupId] || [];
+        console.log(existingPosts);
         set((state) => ({
-          publicPosts: [newPost, ...state.publicPosts],
+          groupPostMap: {
+            ...groupPostMap,
+            [groupId]: [newPost, ...existingPosts],
+          },
         }));
       } else {
         set((state) => ({
-          groupPosts: [newPost, ...state.groupPosts],
+          publicPosts: [newPost, ...state.publicPosts],
         }));
       }
+
       toast.success("Post uploaded successfully");
     } catch (err) {
       toast.error("Post upload failed");
@@ -132,21 +153,32 @@ const usePostStore = create((set, get) => ({
     }
   },
 
-  reactToPost: async (postId, reactionType) => {
+  toggleLikePost: async (postId) => {
     try {
-      const res = await api.post(`/posts/${postId}/react`, { reactionType });
+      const res = await api.post(`/posts/${postId}/like`);
       const updatedPost = res.data.post;
 
-      set((state) => ({
-        publicPosts: state.publicPosts.map((post) =>
+      const { publicPosts, groupPostMap } = get();
+
+      // Update public posts
+      const updatedPublicPosts = publicPosts.map((post) =>
+        post._id === postId ? updatedPost : post
+      );
+
+      // Update all group maps that might contain the post
+      const updatedGroupPostMap = {};
+      for (const groupId in groupPostMap) {
+        updatedGroupPostMap[groupId] = groupPostMap[groupId].map((post) =>
           post._id === postId ? updatedPost : post
-        ),
-        groupPosts: state.groupPosts.map((post) =>
-          post._id === postId ? updatedPost : post
-        ),
-      }));
+        );
+      }
+
+      set({
+        publicPosts: updatedPublicPosts,
+        groupPostMap: updatedGroupPostMap,
+      });
     } catch (err) {
-      console.error("Failed to react:", err);
+      console.error("Failed to like/unlike post:", err);
     }
   },
 
@@ -199,6 +231,19 @@ const usePostStore = create((set, get) => ({
       set({ tagged: res.data });
     } catch (err) {
       console.error("Fetch tagged posts failed:", err);
+    }
+  },
+
+  fetchSinglePost: async (postId) => {
+    console.log("calling");
+    set({ loadingPosts: true });
+    try {
+      const res = await api.get(`/posts/taggedpost/${postId}`);
+      set({ singlePost: res.data });
+    } catch (err) {
+      console.error("fetching the tagged post failed", err);
+    } finally {
+      set({ loadingPosts: false });
     }
   },
 }));

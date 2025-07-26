@@ -20,6 +20,7 @@ import useNotificationStore from "./store/notificationStore";
 import useModalStore from "./store/modalStore";
 import useOnlineUserStore from "./store/onlineUserStore";
 import { socket } from "./utils/socket";
+import SinglePostDisplay from "./pages/SinglePostDisplay";
 
 const App = () => {
   const { isLoggedIn, fetchUser, token, user } = useAuthStore();
@@ -78,6 +79,7 @@ const App = () => {
               <Route path="/groupchat/:id" element={<GroupChatPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/post/:id" element={<SinglePostDisplay />} />
             </>
           )}
           <Route path="*" element={<NotFound />} />

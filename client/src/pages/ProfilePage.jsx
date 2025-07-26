@@ -136,7 +136,7 @@ export default function InstagramProfilePage() {
                 : "text-gray-400 hover:text-gray-300"
             }`}
           >
-            Tagged ({posts.length})
+            Tagged ({tagged.length})
           </button>
         </div>
         {/* Posts Content */}
@@ -149,7 +149,7 @@ export default function InstagramProfilePage() {
                 handleDeletePost={handleDeletePost}
               />
             ))
-          : renderPosts(tagged, true)}
+          : tagged.map((post) => <PostCard key={post._id} post={post} />)}
       </div>
 
       <EditProfileModal

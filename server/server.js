@@ -28,10 +28,10 @@ const io = new Server(server, {
 });
 
 // ✅ Attach io to app so you can use it in controllers
-app.set("io", io);
 
 // ✅ Socket event handlers
 initSocketServer(io);
+app.set("io", io);
 
 // Middlewares
 app.use(
@@ -60,3 +60,11 @@ connectDb()
   .catch((err) => {
     console.error("❌ Failed to connect to DB", err);
   });
+
+const Post = require("./models/Notification");
+const deletepost = async () => {
+  const deleted = await Post.deleteMany();
+  console.log(deleted);
+};
+
+// deletepost();

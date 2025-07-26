@@ -1,6 +1,7 @@
 const Group = require("../models/Group");
 const User = require("../models/User");
 const Notification = require("../models/Notification");
+const cloudinary = require("../config/cloudinary");
 // Create a new group
 exports.createGroup = async (req, res) => {
   try {
@@ -46,7 +47,7 @@ exports.getOtherGroups = async (req, res) => {
   try {
     const groups = await Group.find({ members: { $ne: req.user.id } }).populate(
       "createdBy",
-      "username"
+      "username avatar"
     );
     res.json(groups);
   } catch (err) {
@@ -83,12 +84,36 @@ exports.updateGroup = async (req, res) => {
   }
 };
 
-// Delete a group
 exports.deleteGroup = async (req, res) => {
+  const groupId = req.params.id;
+
   try {
-    await Group.findByIdAndDelete(req.params.id);
-    res.json({ message: "Group deleted" });
+    const group = await Group.findById(groupId);
+    if (!group) return res.status(404).json({ error: "Group not found" });
+
+    // ✅ Optional auth check (recommended)
+    if (group.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    // ✅ Delete all media under the group folder
+    try {
+      await cloudinary.api.delete_resources_by_prefix(`groups/${groupId}`);
+      await cloudinary.api.delete_folder(`groups/${groupId}`);
+    } catch (cloudErr) {
+      console.warn("Cloudinary delete failed:", cloudErr.message);
+      // Not throwing here to allow MongoDB cleanup even if Cloudinary fails
+    }
+
+    // ✅ Delete all posts in this group (optional, but good)
+    await Post.deleteMany({ groupId });
+
+    // ✅ Delete the group itself
+    await Group.findByIdAndDelete(groupId);
+
+    res.json({ message: "Group and related posts deleted successfully" });
   } catch (err) {
+    console.error("Delete group error:", err);
     res.status(500).json({ error: "Failed to delete group" });
   }
 };
@@ -112,19 +137,24 @@ exports.requestToJoinGroup = async (req, res) => {
 
     // Create a notification for the group admin
     const notification = new Notification({
-      userId: group.createdBy._id,
-      fromUser: req.user.id,
+      receiver: group.createdBy._id, // ✅ This is the required field
+      sender: req.user.id,
       type: "join-request",
-      groupId: group._id,
-      message: `${req.user.username} requested to join "${group.name}"`,
+      group: group._id,
+      message: `${req.user.username || "someone"} requested to join "${
+        group.name
+      }"`,
     });
     await notification.save();
 
     // Notify admin via socket
     const io = req.app.get("io");
-    io.to(group.createdBy._id.toString()).emit("new-notification", {
+    console.log(group.createdBy._id.toString(), "is requested to join group");
+    io.to(group.createdBy._id).emit("new-notification", {
       type: "join-request",
-      message: `${req.user.username} requested to join ${group.name}`,
+      message: `${req.user.username || "someone"} requested to join ${
+        group.name
+      }`,
     });
 
     res.status(200).json({ message: "Join request sent" });
@@ -136,7 +166,7 @@ exports.requestToJoinGroup = async (req, res) => {
 
 // Approve a join request
 exports.approveJoinRequest = async (req, res) => {
-  const { userId } = req.body;
+  const { userId, notificationId } = req.body;
   const groupId = req.params.id;
   try {
     const group = await Group.findById(groupId);
@@ -161,9 +191,16 @@ exports.approveJoinRequest = async (req, res) => {
 
     await group.save();
 
+    await Notification.findByIdAndDelete(notificationId);
     // Notify user
     const io = req.app.get("io");
-    io.to(userId).emit("join-approved", {
+    console.log(group.createdBy._id.toString(), "is requested to join group");
+
+    io.to(userId).emit("new-notification", {
+      groupId: group._id,
+      groupName: group.name,
+    });
+    io.to(userId.toString()).emit("new-notification", {
       groupId: group._id,
       groupName: group.name,
     });
@@ -179,9 +216,18 @@ exports.approveJoinRequest = async (req, res) => {
 exports.leaveGroup = async (req, res) => {
   try {
     const group = await Group.findById(req.params.id);
+
+    if (!group) return res.status(404).json({ error: "Group not found" });
+
+    if (group.createdBy.toString() === req.user.id) {
+      return res
+        .status(400)
+        .json({ error: "Group creator cannot leave the group" });
+    }
     group.members = group.members.filter((id) => id.toString() !== req.user.id);
     group.stats.totalMembers--;
     await group.save();
+    console.log(req.user, "left the group");
     res.json(group);
   } catch (err) {
     res.status(500).json({ error: "Failed to leave group" });

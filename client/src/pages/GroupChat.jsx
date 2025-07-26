@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ArrowLeft,
   Users,
@@ -15,6 +15,7 @@ import {
   Camera,
   Send,
   X,
+  Plus,
   UserPlus,
   Settings,
   Lock,
@@ -33,7 +34,8 @@ import PostCard from "../components/post/PostCard";
 import PostModal from "../components/postModal/PostModal";
 import useGroupStore from "../store/groupStore";
 import usePostStore from "../store/postStore";
-
+import useModalStore from "../store/modalStore";
+import useLoaderStore from "../store/loaderStore";
 const GroupChatPage = () => {
   // const [posts, setPosts] = useState(mockPosts);
   const [activeTab, setActiveTab] = useState("posts");
@@ -45,17 +47,23 @@ const GroupChatPage = () => {
   const groupDetails = useGroupStore((state) => state.groupDetails);
   const fetchGroupById = useGroupStore((state) => state.fetchGroupById);
   const loading = useGroupStore((state) => state.loading);
-
+  const isUploading = useLoaderStore((state) => state.isUploading);
   const fetchGroupPosts = usePostStore((state) => state.fetchGroupPosts);
-  const groupPosts = usePostStore((state) => state.groupPosts);
+  const groupPosts = usePostStore((state) => state.groupPostMap[id]) || [];
+  const hasMore = usePostStore((state) => state.hasMore);
   const deleteUploadedPost = usePostStore((state) => state.deleteUploadedPost);
+  const openUploadModal = useModalStore((state) => state.openUploadModal);
+  const resetGroupPagination = usePostStore(
+    (state) => state.resetGroupPagination
+  );
+  const loadingPosts = usePostStore((state) => state.loadingPosts);
+  const observerRef = useRef(null);
   useEffect(() => {
     fetchGroupById(id);
     fetchGroupPosts(id);
-  }, []);
+  }, [id]);
 
   const handleCreatePost = (postData) => {};
-  console.log(groupDetails);
 
   const handleReact = (postId, reactionType) => {};
 
@@ -65,10 +73,29 @@ const GroupChatPage = () => {
 
   const handleComment = (postId, commentText) => {};
 
-  console.log(loading);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingPosts) {
+          fetchGroupPosts(id);
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    const el = observerRef.current;
+    if (el) observer.observe(el);
+
+    return () => {
+      if (el) observer.unobserve(el);
+      observer.disconnect();
+    };
+  }, [hasMore, loadingPosts, id]);
+
+  // console.log(loading);
   if (loading || !groupDetails) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen dark:bg-gray-900 bg-white flex items-center justify-center">
         <div className="flex items-center gap-2 text-white">
           <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
           <span className="text-sm">Loading...</span>
@@ -118,9 +145,13 @@ const GroupChatPage = () => {
             </button>
           </div>
         </div>
+        {isUploading && (
+          <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 animate-pulse" />
+        )}
       </div>
 
       {/* Tabs */}
+
       <div className="flex dark:bg-gray-800 bg-white border-b border-gray-100 dark:border-gray-800 sticky top-[72px] z-50">
         <button
           onClick={() => setActiveTab("posts")}
@@ -154,6 +185,10 @@ const GroupChatPage = () => {
         </button>
       </div>
 
+      {activeTab == "posts" && (
+        <FloatingActionButton onClick={() => setShowCreatePost(true)} />
+      )}
+
       {/* Content */}
       <div className="pb-6">
         {activeTab === "posts" && (
@@ -175,15 +210,25 @@ const GroupChatPage = () => {
                 </button>
               </div>
             ) : (
-              groupPosts.map((post) => (
-                <PostCard
-                  key={post._id}
-                  post={post}
-                  onReact={handleReact}
-                  onComment={handleComment}
-                  handleDeletePost={(postId) => deleteUploadedPost(postId)}
-                />
-              ))
+              <div className="max-w-md mx-auto pb-20">
+                {groupPosts.map((post) => (
+                  <PostCard
+                    key={post._id}
+                    post={post}
+                    onReact={handleReact}
+                    onComment={handleComment}
+                    handleDeletePost={(postId) => deleteUploadedPost(postId)}
+                  />
+                ))}
+                {hasMore && (
+                  <div
+                    ref={observerRef}
+                    className="h-10 flex justify-center items-center"
+                  >
+                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -524,3 +569,12 @@ const ShowMembersModal = ({ group }) => {
     </div>
   );
 };
+
+const FloatingActionButton = ({ onClick }) => (
+  <button
+    onClick={onClick}
+    className="fixed bottom-20 right-6 w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full shadow-lg flex items-center justify-center z-40 hover:scale-110 active:scale-95 transition-transform duration-200"
+  >
+    <Plus className="w-6 h-6 text-white" />
+  </button>
+);

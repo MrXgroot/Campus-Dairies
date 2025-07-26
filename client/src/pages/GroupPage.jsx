@@ -12,6 +12,7 @@ import {
   X,
   LogOut,
 } from "lucide-react";
+import moment from "moment";
 import { formatDateTime } from "../utils/formatDate.js";
 import Header from "../components/header/Header";
 import useGroupStore from "../store/groupStore";
@@ -47,16 +48,19 @@ const CreateGroupModal = ({ isOpen, onClose, onCreateGroup }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 rounded-2xl w-full max-w-md">
-        <div className="flex items-center justify-between p-4 border-b border-gray-800">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md shadow-lg">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-800 rounded-full"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-5 h-5 text-gray-800 dark:text-white" />
           </button>
-          <h2 className="text-lg font-semibold text-white">Create Group</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Create Group
+          </h2>
           <button
             onClick={handleSubmit}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
@@ -65,10 +69,11 @@ const CreateGroupModal = ({ isOpen, onClose, onCreateGroup }) => {
           </button>
         </div>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="p-4">
           <div className="flex items-center gap-4 mb-6">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden">
+              <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
                 {avatarPreview ? (
                   <img
                     src={avatarPreview}
@@ -92,15 +97,18 @@ const CreateGroupModal = ({ isOpen, onClose, onCreateGroup }) => {
               </button>
             </div>
             <div className="flex-1">
-              <p className="text-white font-medium">Add group photo</p>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-900 dark:text-white font-medium">
+                Add group photo
+              </p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Choose a photo that represents your group
               </p>
             </div>
           </div>
 
+          {/* Group Name */}
           <div className="mb-4">
-            <label className="block text-white font-medium mb-2">
+            <label className="block text-gray-900 dark:text-white font-medium mb-2">
               Group Name
             </label>
             <input
@@ -108,13 +116,14 @@ const CreateGroupModal = ({ isOpen, onClose, onCreateGroup }) => {
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               placeholder="Enter group name"
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
+              className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
               required
             />
           </div>
 
+          {/* Description */}
           <div className="mb-6">
-            <label className="block text-white font-medium mb-2">
+            <label className="block text-gray-900 dark:text-white font-medium mb-2">
               Description
             </label>
             <textarea
@@ -122,16 +131,19 @@ const CreateGroupModal = ({ isOpen, onClose, onCreateGroup }) => {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What's this group about?"
               rows="3"
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors resize-none"
+              className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors resize-none"
             />
           </div>
 
-          <div className="bg-gray-800 rounded-lg p-4">
+          {/* Privacy Info */}
+          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <Lock className="w-5 h-5 text-gray-400" />
+              <Lock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               <div>
-                <h3 className="text-white font-medium">Private Group</h3>
-                <p className="text-gray-400 text-sm">
+                <h3 className="text-gray-900 dark:text-white font-medium">
+                  Private Group
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
                   Only members can see posts and members
                 </p>
               </div>
@@ -177,7 +189,7 @@ const GroupCard = ({ group, onJoin, onLeave, isJoined, openGroup }) => {
             <Users className="w-3 h-3" />
             <span>{group.stats.totalMembers} members</span>
             <span>•</span>
-            <span>{formatDateTime(group.updatedAt)}</span>
+            <span>{moment(group.createdAt).fromNow()}</span>
           </div>
           <div className="flex items-center gap-2 mt-1">
             <img

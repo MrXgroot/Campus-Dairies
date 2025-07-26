@@ -8,37 +8,22 @@ const {
   getTaggedPosts,
   uploadPost,
   getPublicPosts,
-  reactToPost,
+  toggleLikePost,
   getGroupPosts,
   reportPost,
   deletePost,
+  generateSignature,
+  getSinglePost,
 } = require("../controllers/postController");
 const authMiddleware = require("../middleware/authMiddleware");
 router.get("/my-uploads", authMiddleware, getMyPosts);
 router.get("/tagged", authMiddleware, getTaggedPosts);
 router.get("/public", authMiddleware, getPublicPosts);
-router.post("/:id/react", authMiddleware, reactToPost);
+router.post("/:id/like", authMiddleware, toggleLikePost);
 router.get("/group/:id", authMiddleware, getGroupPosts);
-router.post(
-  "/upload",
-  authMiddleware,
-  (req, res, next) => {
-    upload.single("file")(req, res, function (err) {
-      if (err instanceof multer.MulterError) {
-        console.log("here1:", err.message);
-        return res
-          .status(400)
-          .json({ error: "Multer upload error: " + err.message });
-      } else if (err) {
-        console.log("here2", err);
-        return res.status(500).json({ error: "Upload failed: " + err.message });
-      }
-      next();
-    });
-  },
-  uploadPost
-);
+router.post("/upload", authMiddleware, uploadPost);
+router.get("/generate-signature", authMiddleware, generateSignature);
 router.post("/:id/report", authMiddleware, reportPost);
 router.delete("/:id", authMiddleware, deletePost);
-
+router.get("/taggedpost/:id", authMiddleware, getSinglePost);
 module.exports = router;
