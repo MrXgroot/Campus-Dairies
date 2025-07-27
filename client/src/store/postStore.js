@@ -6,7 +6,7 @@ const usePostStore = create((set, get) => ({
   loadingPosts: false,
   publicPosts: [],
   currentPage: 0,
-  limit: 2,
+  limit: 12,
   hasMore: true,
   hasMoreGroup: true,
   posts: [],
