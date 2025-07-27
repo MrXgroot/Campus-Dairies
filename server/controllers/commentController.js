@@ -1,20 +1,43 @@
 const Comment = require("../models/Comment");
-
+const Post = require("../models/Post");
+const Notification = require("../models/Notification");
 // Create a new comment on a post
 const createComment = async (req, res) => {
   const { text } = req.body;
   const { postId } = req.params;
   const userId = req.user.id;
-  console.log(text, postId);
   if (!text) return res.status(400).json({ error: "Comment text is required" });
 
   try {
+    const post = await Post.findById(postId).populate("createdBy", "_id");
+
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
     let newComment = await Comment.create({
       postId,
       user: userId,
       text,
     });
+    await Post.findByIdAndUpdate(postId, {
+      $push: { comments: newComment._id },
+    });
     newComment = await newComment.populate("user", "name avatar isVerified");
+
+    if (userId !== post.createdBy._id.toString()) {
+      await Notification.create({
+        sender: userId,
+        receiver: post.createdBy._id,
+        type: "comment",
+        message: `${newComment.user.name} commented: "${text.slice(0, 100)}"`,
+        post: postId,
+        commentId: newComment._id,
+      });
+      const io = req.app.get("io");
+      io.to(post.createdBy._id.toString()).emit("new-notification", {
+        message: "new Comment on your post",
+      });
+    }
+
     res.status(201).json(newComment);
   } catch (err) {
     console.error("Error creating comment:", err);

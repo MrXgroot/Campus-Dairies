@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Users,
   Lock,
@@ -157,7 +157,16 @@ const CreateGroupModal = ({ isOpen, onClose, onCreateGroup }) => {
 
 const GroupCard = ({ group, onJoin, onLeave, isJoined, openGroup }) => {
   const [showDropdown, setShowDropdown] = useState(false);
-
+  const optionRef = useRef(null);
+  useEffect(() => {
+    const handleClickOutSide = (e) => {
+      if (optionRef.current && !optionRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutSide);
+    return () => document.removeEventListener("mousedown", handleClickOutSide);
+  });
   return (
     <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 transition-colors">
       {/* Group Avatar and Info */}
@@ -206,7 +215,7 @@ const GroupCard = ({ group, onJoin, onLeave, isJoined, openGroup }) => {
       </div>
 
       {/* Action Button */}
-      <div className="flex items-center gap-2">
+      <div ref={optionRef} className="flex items-center gap-2">
         {isJoined ? (
           <div className="relative">
             <button
@@ -291,7 +300,6 @@ const GroupsPage = () => {
   };
 
   const handleOpenGroup = (groupId) => {
-    console.log(groupId);
     navigate(`/groupchat/${groupId}`);
   };
 
@@ -307,7 +315,7 @@ const GroupsPage = () => {
   }
 
   return (
-    <div className="min-h-screen  dark:bg-gray-900 bg-gray-50 text-white relative">
+    <div className="min-h-screen  dark:bg-gray-900 bg-gray-50 text-white relative pb-40">
       {/* Header */}
       {/* <div className="bg-black border-b border-gray-800 sticky top-0 z-40">
         <div className="px-4 py-4">

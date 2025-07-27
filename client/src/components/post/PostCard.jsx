@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { formatDateTime } from "../../utils/formatDate";
 import moment from "moment";
 import VerifiedBadge from "../badges/VerifiedBadge";
 import usePostStore from "../../store/postStore";
 import useModalStore from "../../store/modalStore";
 import useAuthStore from "../../store/authStore";
+import Toast from "react-hot-toast";
+import useUserStore from "../../store/userStore";
 import {
   Heart,
   MessageCircle,
@@ -15,6 +16,8 @@ import {
   ThumbsDown,
   Volume2,
   VolumeX,
+  Hand,
+  Send,
 } from "lucide-react";
 
 const PostCard = ({ post, canDelete, handleDeletePost }) => {
@@ -34,6 +37,7 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
   const reactToPost = usePostStore((state) => state.toggleLikePost);
   const openCommentModal = useModalStore((state) => state.openCommentModal);
   const user = useAuthStore((state) => state.user);
+  const { sendWaveToUser } = useUserStore();
   useEffect(() => {
     setLiked(post.isHearted);
   }, [post.isHearted]);
@@ -113,6 +117,10 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   });
+  const sendWave = () => {
+    sendWaveToUser(post.createdBy._id);
+    Toast.success(`Sent hi to ${post.createdBy.username}`);
+  };
 
   return (
     <div
@@ -253,7 +261,8 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
               onClick={() => setDisliked(!disliked)}
               className="active:scale-125 transition-transform"
             >
-              <ThumbsDown
+              <Send
+                onClick={sendWave}
                 className={`w-7 h-7 ${
                   disliked ? "text-red-500" : "text-gray-700 dark:text-gray-300"
                 }`}
@@ -301,12 +310,12 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
           ))}
 
         {/* Comments */}
-        {!post.comments.length > 0 && (
+        {post.comments.length > 0 && (
           <button
-            onClick={() => setShowComments(!showComments)}
+            onClick={handleOpenComments}
             className="text-sm text-gray-500 dark:text-gray-400 mt-2 hover:text-gray-700 dark:hover:text-gray-200"
           >
-            View all 2 comments
+            {`View all ${post.comments.length} comments`}
           </button>
         )}
       </div>

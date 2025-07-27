@@ -24,7 +24,6 @@ const useGroupStore = create((set, get) => ({
     try {
       set({ loading: true });
       const res = await api.get("/groups/my");
-      console.log(res.data);
       set({ joinedGroups: res.data });
     } catch (err) {
       console.error("Fetch joined groups failed:", err);

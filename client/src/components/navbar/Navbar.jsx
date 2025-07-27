@@ -1,12 +1,12 @@
 import React from "react";
 import { Home, Users, Plus, Bell, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import useNotificationStore from "../../store/notificationStore";
+import useSocketMessageStore from "../../store/socketMessageStore";
 
 const Navbar = ({ onCreatePostClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasUnread } = useNotificationStore();
+  const { newNotification } = useSocketMessageStore();
 
   const isActive = (path) => location.pathname === path;
 
@@ -58,7 +58,7 @@ const Navbar = ({ onCreatePostClick }) => {
           }`}
         >
           <Bell className="w-6 h-6" />
-          {hasUnread && (
+          {newNotification && (
             <span className="absolute top-0 right-1 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-gray-900" />
           )}
           <span className="text-[10px] mt-0.5">Alerts</span>

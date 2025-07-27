@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { X } from "lucide-react";
 import moment from "moment";
 import { useState } from "react";
-import waveGif from "../../assets/wavehand.gif";
+import Lottie from "lottie-react";
+import wavingHand from "../../assets/wavinghand.json";
 const NotificationCard = ({ notification, onDelete, onApproveRequest }) => {
   const { _id, sender, message, post, isRead, createdAt, type, group } =
     notification;
@@ -25,7 +26,7 @@ const NotificationCard = ({ notification, onDelete, onApproveRequest }) => {
         {/* Delete button */}
         <button
           onClick={onDelete}
-          className="absolute top-3 right-3 text-gray-400 hover:text-red-500"
+          className="absolute top-3 z-5 right-3 text-gray-400 hover:text-red-500"
         >
           <X size={16} />
         </button>
@@ -50,10 +51,10 @@ const NotificationCard = ({ notification, onDelete, onApproveRequest }) => {
           </div>
         </div>
 
-        {/* Right big gif */}
-        <img
-          src={waveGif}
-          alt="wave"
+        <Lottie
+          animationData={wavingHand}
+          loop={true}
+          autoplay={true}
           className="w-16 h-16  scale-200 object-contain rounded-md"
         />
       </div>

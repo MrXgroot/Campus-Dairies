@@ -13,7 +13,6 @@ const useCommentStore = create((set, get) => ({
   // Fetch initial comments or next page
   getComments: async (postId) => {
     const { page, limit, hasMore, loading, comments } = get();
-    console.log("calling the code");
     if (loading || !hasMore) return;
 
     try {
@@ -23,7 +22,6 @@ const useCommentStore = create((set, get) => ({
         `/comments/${postId}?page=${page}&limit=${limit}`
       );
       const newComments = res.data.comments;
-      console.log(newComments.length);
       set((state) => ({
         comments: [...comments, ...newComments],
         page: page + 1,
@@ -43,7 +41,6 @@ const useCommentStore = create((set, get) => ({
     try {
       const res = await api.post(`/comments/${postId}`, { text });
       const newComment = res.data;
-      console.log(newComment);
       set((state) => ({
         comments: [newComment, ...state.comments],
       }));
@@ -54,7 +51,6 @@ const useCommentStore = create((set, get) => ({
 
   // Add a reply to a specific comment
   replyToComment: async (commentId, text, replyingTo = "") => {
-    console.log(commentId, replyingTo, text);
     try {
       const res = await api.post(`/comments/reply/${commentId}`, {
         text,

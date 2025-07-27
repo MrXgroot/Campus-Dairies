@@ -5,8 +5,8 @@ import useLoaderStore from "../store/loaderStore";
 const usePostStore = create((set, get) => ({
   loadingPosts: false,
   publicPosts: [],
-  currentPage: 1,
-  limit: 12,
+  currentPage: 0,
+  limit: 2,
   hasMore: true,
   hasMoreGroup: true,
   posts: [],
@@ -36,18 +36,28 @@ const usePostStore = create((set, get) => ({
 
   // ✅ Fetch public posts with pagination
   fetchPublicPosts: async () => {
-    const { currentPage, limit, publicPosts } = get();
+    const { currentPage, limit, publicPosts, hasMore, loadingPosts } = get();
+
+    if (!hasMore || loadingPosts) return;
+
+    const alreadyFetchedPosts = publicPosts.length;
+    const expectedPosts = (currentPage + 1) * limit;
+
+    // If we already have enough posts for the next page, skip fetching
+    if (alreadyFetchedPosts >= expectedPosts) return;
+
     set({ loadingPosts: true });
+
     try {
+      const nextPage = currentPage + 1;
       const res = await api.get(
-        `/posts/public?page=${currentPage}&limit=${limit}`
+        `/posts/public?page=${nextPage}&limit=${limit}`
       );
       const newPosts = res.data;
-      // console.log(newPosts);
       set({
         publicPosts: [...publicPosts, ...newPosts],
         hasMore: newPosts.length === limit,
-        currentPage: currentPage + 1,
+        currentPage: nextPage,
       });
     } catch (err) {
       console.error("Failed to fetch public posts:", err);
@@ -56,34 +66,36 @@ const usePostStore = create((set, get) => ({
     }
   },
 
-  // ✅ Fetch group posts with pagination
   fetchGroupPosts: async (groupId) => {
     const { groupPostMap, groupPageMap, hasMoreGroupMap, limit, loadingPosts } =
       get();
+
     const currentPosts = groupPostMap[groupId] || [];
-    const currentPage = groupPageMap[groupId] || 1;
+    const currentPage = groupPageMap[groupId] || 0;
     const hasMore = hasMoreGroupMap[groupId] ?? true;
 
-    if (!hasMore) return;
+    if (!hasMore || loadingPosts) return;
+
+    const expectedPosts = (currentPage + 1) * limit;
+    if (currentPosts.length >= expectedPosts) return;
 
     set({ loadingPosts: true });
 
-    console.log("calling posts");
     try {
+      const nextPage = currentPage + 1;
       const res = await api.get(
-        `/posts/group/${groupId}?page=${currentPage}&limit=${limit}`
+        `/posts/group/${groupId}?page=${nextPage}&limit=${limit}`
       );
       const newPosts = res.data;
-      console.log(newPosts, "loaded");
+
       set({
         groupPostMap: {
           ...groupPostMap,
           [groupId]: [...currentPosts, ...newPosts],
         },
-
         groupPageMap: {
           ...groupPageMap,
-          [groupId]: currentPage + 1,
+          [groupId]: nextPage,
         },
         hasMoreGroupMap: {
           ...hasMoreGroupMap,
@@ -96,7 +108,6 @@ const usePostStore = create((set, get) => ({
       set({ loadingPosts: false });
     }
   },
-
   reportPost: async (postId) => {
     try {
       const res = await api.post(`/posts/${postId}/report`);
@@ -217,7 +228,6 @@ const usePostStore = create((set, get) => ({
   fetchUploadedPosts: async () => {
     try {
       const res = await api.get("/posts/my-uploads");
-      console.log(res.data);
       set({ posts: res.data });
     } catch (err) {
       console.error("Fetch uploaded posts failed:", err);

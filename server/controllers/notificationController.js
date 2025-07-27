@@ -1,11 +1,16 @@
 const Notification = require("../models/Notification");
+
 exports.getNotifications = async (req, res) => {
   try {
+    // Fetch all notifications for the user
     const notifications = await Notification.find({ receiver: req.user.id })
       .sort({ createdAt: -1 })
+      .limit(20)
       .populate("sender", "username avatar")
       .populate("group", "name")
       .populate("post", "_id");
+
+    // Send notifications to client
     res.status(200).json({ notifications });
   } catch (err) {
     console.error("❌ Failed to fetch notifications:", err.message);

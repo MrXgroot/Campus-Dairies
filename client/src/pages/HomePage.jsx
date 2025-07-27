@@ -83,7 +83,6 @@ const HomePage = () => {
   } = usePostStore();
   const onlineUsers = useOnlineUserStore((state) => state.onlineUsers);
   useEffect(() => {
-    resetPagination();
     fetchPublicPosts();
   }, []);
 
@@ -111,7 +110,6 @@ const HomePage = () => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading) {
-          console.log("fetching");
           fetchPublicPosts();
         }
       },
@@ -206,7 +204,6 @@ const HomePage = () => {
 };
 
 const StoriesSection = ({ stories, onClick }) => {
-  console.log(stories);
   return (
     <div className="max-w-md mx-auto px-4 py-4">
       <div className="flex gap-4 overflow-x-auto scrollbar-hide">

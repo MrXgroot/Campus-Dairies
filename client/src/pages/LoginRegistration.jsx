@@ -24,7 +24,7 @@ const LoginPage = () => {
       {/* Branding */}
       <div className="text-center mb-10 animate-fade-in-up">
         <div className="text-4xl font-extrabold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
-          SocialFeed
+          CampusDairies
         </div>
         <p className="mt-2 text-gray-400 text-sm">
           Dive into campus stories & moments

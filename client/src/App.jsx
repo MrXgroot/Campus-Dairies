@@ -16,7 +16,7 @@ import Navbar from "./components/navbar/Navbar";
 import CommentModal from "./components/comment/CommentModal";
 
 import useAuthStore from "./store/authStore";
-import useNotificationStore from "./store/notificationStore";
+import useSocketMessageStore from "./store/socketMessageStore";
 import useModalStore from "./store/modalStore";
 import useOnlineUserStore from "./store/onlineUserStore";
 import { socket } from "./utils/socket";
@@ -24,7 +24,7 @@ import SinglePostDisplay from "./pages/SinglePostDisplay";
 
 const App = () => {
   const { isLoggedIn, fetchUser, token, user } = useAuthStore();
-  const { addNotification } = useNotificationStore();
+  const { addNewNotification } = useSocketMessageStore();
   const { showCommentModal, closeCommentModal } = useModalStore();
   const { setOnlineUsers } = useOnlineUserStore();
 
@@ -51,9 +51,9 @@ const App = () => {
   }, [setOnlineUsers]);
 
   useEffect(() => {
-    socket.on("new-notification", addNotification);
-    return () => socket.off("new-notification", addNotification);
-  }, [addNotification]);
+    socket.on("new-notification", addNewNotification);
+    return () => socket.off("new-notification", addNewNotification);
+  }, [addNewNotification]);
 
   useEffect(() => {
     if (!isLoggedIn && location.pathname !== "/login") {

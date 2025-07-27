@@ -3,6 +3,7 @@ import useNotificationStore from "../store/notificationStore";
 import NotificationCard from "../components/notification/NotificationCard";
 import { Loader2, Trash2 } from "lucide-react";
 import useGroupStore from "../store/groupStore";
+import useSocketMessageStore from "../store/socketMessageStore";
 const NotificationPage = () => {
   const {
     notifications,
@@ -12,12 +13,13 @@ const NotificationPage = () => {
     deleteAllNotifications,
   } = useNotificationStore();
   const { acceptJoinRequest } = useGroupStore();
+  const { markAsRead } = useSocketMessageStore();
   useEffect(() => {
     fetchNotifications();
+    markAsRead();
   }, []);
 
   const handleAcceptJoinRequest = (groupId, userId, notificationId) => {
-    console.log(groupId, userId, notificationId);
     acceptJoinRequest(groupId, userId, notificationId);
   };
 

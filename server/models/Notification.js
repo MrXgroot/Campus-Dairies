@@ -41,6 +41,12 @@ const notificationSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Post",
     },
+    commenters: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
 
     // Optional reference to group (for join-related events)
     group: {
@@ -56,5 +62,6 @@ const notificationSchema = new Schema(
   },
   { timestamps: true }
 );
+notificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 604800 });
 
 module.exports = mongoose.model("Notification", notificationSchema);

@@ -6,24 +6,12 @@ const useNotificationStore = create((set) => ({
   notifications: [],
   hasUnread: false,
 
-  // ✅ Add a notification (via socket)
-  addNotification: (notif) => {
-    console.log("📩 New notification via socket:", notif);
-    set((state) => ({
-      hasUnread: true,
-    }));
-    if (notif.type == "wave") {
-      set({ notifications: notif });
-    }
-  },
-
   // ✅ Fetch from DB
   fetchNotifications: async () => {
     try {
       const res = await api.get("/notifications");
 
       const notifs = res.data.notifications || [];
-      console.log(notifs);
       set({
         notifications: notifs,
       });
@@ -31,7 +19,27 @@ const useNotificationStore = create((set) => ({
       console.error("Fetch notifications failed:", err);
     }
   },
+  // ✅ Delete a single notification
+  deleteNotification: async (notifId) => {
+    try {
+      await api.delete(`/notifications/${notifId}`);
+      set((state) => ({
+        notifications: state.notifications.filter((n) => n._id !== notifId),
+      }));
+    } catch (err) {
+      console.error("Delete notification failed:", err);
+    }
+  },
 
+  // ✅ Delete all notifications
+  deleteAllNotifications: async () => {
+    try {
+      await api.delete("/notifications");
+      set({ notifications: [] });
+    } catch (err) {
+      console.error("Delete all notifications failed:", err);
+    }
+  },
   // ✅ Mark all as read
   markAllAsRead: () =>
     set((state) => ({

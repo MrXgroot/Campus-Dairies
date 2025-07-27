@@ -28,6 +28,8 @@ import {
   Bookmark,
   ThumbsDown,
   CheckCircle,
+  LogOut,
+  Trash2,
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import PostCard from "../components/post/PostCard";
@@ -58,6 +60,8 @@ const GroupChatPage = () => {
   );
   const loadingPosts = usePostStore((state) => state.loadingPosts);
   const observerRef = useRef(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+
   useEffect(() => {
     fetchGroupById(id);
     fetchGroupPosts(id);
@@ -140,7 +144,11 @@ const GroupChatPage = () => {
             >
               <Users className="w-5 h-5 text-gray-800 dark:text-white" />
             </button>
-            <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+
+            <button
+              onClick={() => setShowDropdown((prev) => !prev)}
+              className="p-2 relative rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
               <MoreHorizontal className="w-5 h-5 text-gray-800 dark:text-white" />
             </button>
           </div>
@@ -152,7 +160,7 @@ const GroupChatPage = () => {
 
       {/* Tabs */}
 
-      <div className="flex dark:bg-gray-800 bg-white border-b border-gray-100 dark:border-gray-800 sticky top-[72px] z-50">
+      <div className="flex dark:bg-gray-800 bg-white border-b border-gray-100 dark:border-gray-800 sticky top-[72px] z-40">
         <button
           onClick={() => setActiveTab("posts")}
           className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${

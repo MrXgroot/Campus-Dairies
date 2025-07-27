@@ -14,15 +14,10 @@ exports.getMyPosts = async (req, res) => {
   try {
     const posts = await Post.find({ createdBy: req.user.id })
       .sort({ createdAt: -1 })
-      .populate({
-        path: "groupId",
-        select: "name groupImage description",
-        match: { _id: { $exists: true } },
-      })
       .populate("createdBy", "username avatar")
       .populate({
         path: "comments",
-        populate: { path: "createdBy", select: "username avatar" },
+        populate: { path: "user", select: "username avatar" },
       });
     res.status(200).json(posts);
   } catch (err) {
@@ -37,7 +32,7 @@ exports.getTaggedPosts = async (req, res) => {
   try {
     const posts = await Post.find({ taggedUsers: userId })
       .populate("createdBy", "name username avatar")
-      .populate("groupId", "name")
+      .populate("taggedUsers", "username")
       .sort({ createdAt: -1 });
 
     res.status(200).json(posts);
@@ -376,7 +371,7 @@ exports.getSinglePost = async (req, res) => {
       .populate("taggedUsers", "username avatar")
       .populate({
         path: "comments",
-        populate: { path: "createdBy", select: "username avatar" },
+        populate: { path: "user", select: "username avatar" },
       })
       .lean();
     res.status(201).json(post);

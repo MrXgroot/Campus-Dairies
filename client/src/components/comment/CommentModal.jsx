@@ -100,8 +100,6 @@ const CommentModal = ({ isOpen, onClose }) => {
     return () => observer.disconnect();
   }, [hasMore, loading]);
 
-  console.log(comments);
-
   const handleAddComment = () => {
     if (!newComment.trim()) return;
 
@@ -131,6 +129,16 @@ const CommentModal = ({ isOpen, onClose }) => {
       }
     }
   };
+
+  useEffect(() => {
+    const handleClickOutSide = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutSide);
+    return () => document.removeEventListener("mousedown", handleClickOutSide);
+  });
 
   return (
     <div className="fixed inset-0 bg-[rgba(0,0,0,0.75)] flex items-end sm:items-center justify-center z-100 ">
@@ -209,7 +217,7 @@ const CommentModal = ({ isOpen, onClose }) => {
               {comment.replies.length > 0 && (
                 <div className="ml-11 space-y-2">
                   {comment.replies.map((reply) => (
-                    <div key={reply.id} className="flex items-start gap-3">
+                    <div key={reply._id} className="flex items-start gap-3">
                       <img
                         src={reply.user.avatar}
                         alt={reply.user.name}

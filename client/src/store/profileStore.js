@@ -7,11 +7,9 @@ const useProfileStore = create((set) => ({
 
   // Get logged-in user's profile
   fetchProfile: async () => {
-    console.log("fetching");
     try {
       set({ loading: true });
       const res = await api.get("/users/me");
-      console.log(res.data);
       set({ profile: res.data });
     } catch (err) {
       console.error("Fetch profile failed:", err);
