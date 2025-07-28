@@ -55,7 +55,7 @@ const LoginPage = () => {
 
       {/* Footer */}
       <footer className="absolute bottom-6 text-sm text-gray-500 text-center">
-        © 2025 SocialFeed. All rights reserved.
+        © 2025 CampusDiaries. All rights reserved.
       </footer>
     </div>
   );

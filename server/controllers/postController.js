@@ -353,15 +353,12 @@ exports.deletePost = async (req, res) => {
   const postId = req.params.id;
   const userId = req.user.id;
   const isAdmin = req.user.isAdmin;
-
+  console.log(isAdmin);
   try {
     const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ error: "Post not found" });
 
     if (post.createdBy.toString() !== userId && !isAdmin) {
-      console.log("can delete the post");
-    }
-    if (post.createdBy.toString() !== userId) {
       return res.status(403).json({ error: "Unauthorized" });
     }
     if (post.cloudinaryPublicId) {

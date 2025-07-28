@@ -27,6 +27,10 @@ const io = new Server(server, {
   },
 });
 
+// https://campus-dairies.vercel.app
+
+// http://localhost:5173
+
 // ✅ Attach io to app so you can use it in controllers
 
 // ✅ Socket event handlers

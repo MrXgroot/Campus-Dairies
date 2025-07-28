@@ -2,13 +2,12 @@
 import { create } from "zustand";
 import api from "../utils/api"; // Make sure this points to your Axios instance
 
-const useNotificationStore = create((set) => ({
+const useNotificationStore = create((set, get) => ({
   notifications: [],
   hasUnread: false,
   loading: false,
   // ✅ Fetch from DB
   fetchNotifications: async () => {
-    set({ loading: true });
     try {
       const res = await api.get("/notifications");
       const notifs = res.data.notifications || [];

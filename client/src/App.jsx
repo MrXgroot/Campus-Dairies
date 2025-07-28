@@ -64,15 +64,13 @@ import { socket } from "./utils/socket";
 // Memoized Loading Component
 const LoadingFallback = memo(() => (
   <div className="flex flex-col items-center justify-center h-screen bg-[#0f0f0f] text-white gap-6 font-sans z-50">
-    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent transition-transform hover:scale-105 cursor-pointer">
+    {/* Spinner */}
+    <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+
+    {/* App Name */}
+    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
       CampusDiaries
     </h1>
-    <img
-      src="/src/assets/windowcat.gif"
-      alt="Loading Cat"
-      className="w-[150px] drop-shadow"
-      loading="eager"
-    />
   </div>
 ));
 

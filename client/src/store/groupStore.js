@@ -4,7 +4,7 @@ import api from "../utils/api";
 const useGroupStore = create((set, get) => ({
   joinedGroups: [],
   otherGroups: [],
-  groupDetails: null,
+  groupMap: {},
   groupPosts: [],
   loading: false,
 
@@ -33,10 +33,17 @@ const useGroupStore = create((set, get) => ({
   },
 
   fetchGroupById: async (groupId) => {
+    const existing = get().groupMap[groupId];
+    if (existing) return;
     try {
       set({ loading: true });
       const res = await api.get(`/groups/${groupId}`);
-      set({ groupDetails: res.data });
+      set((state) => ({
+        groupMap: {
+          ...state.groupMap,
+          [groupId]: res.data,
+        },
+      }));
     } catch (err) {
       console.error("Fetch group by id failed", err);
     } finally {

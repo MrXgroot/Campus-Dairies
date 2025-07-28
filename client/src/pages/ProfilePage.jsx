@@ -435,13 +435,6 @@ export default function InstagramProfilePage() {
   }, [activeTab, posts, tagged]);
 
   // Loading component
-  if (loading) {
-    return (
-      <div className="h-10 flex justify-center items-center">
-        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
@@ -456,14 +449,20 @@ export default function InstagramProfilePage() {
       </div>
 
       <div className="max-w-md mx-auto">
+        {loading ? (
+          <div className="h-10 flex justify-center items-center">
+            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <ProfileHeaderAndStats
+            profile={profile}
+            onProfileButtonClick={handleProfileButtonClick}
+            onUploadAvatar={handleUploadAvatar}
+            fileInputRef={fileInputRef}
+            openEditProfile={openEditProfile}
+          />
+        )}
         {/* Profile Header with Stats */}
-        <ProfileHeaderAndStats
-          profile={profile}
-          onProfileButtonClick={handleProfileButtonClick}
-          onUploadAvatar={handleUploadAvatar}
-          fileInputRef={fileInputRef}
-          openEditProfile={openEditProfile}
-        />
 
         <div className="flex bg-white dark:bg-gray-800 dark:border-b dark:border-gray-700">
           <button onClick={handlePostsTab} className={postsTabClass}>

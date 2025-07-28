@@ -42,7 +42,7 @@ const usePostStore = create((set, get) => ({
 
     const alreadyFetchedPosts = publicPosts.length;
     const expectedPosts = (currentPage + 1) * limit;
-
+    console.log(loadingPosts);
     // If we already have enough posts for the next page, skip fetching
     if (alreadyFetchedPosts >= expectedPosts) return;
 
@@ -54,6 +54,7 @@ const usePostStore = create((set, get) => ({
         `/posts/public?page=${nextPage}&limit=${limit}`
       );
       const newPosts = res.data;
+
       set({
         publicPosts: [...publicPosts, ...newPosts],
         hasMore: newPosts.length === limit,

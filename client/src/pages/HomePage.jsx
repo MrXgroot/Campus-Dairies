@@ -184,7 +184,6 @@ const PostItem = memo(({ post, index, handleDeletePost }) => {
 
 const HomePage = () => {
   // State
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -263,7 +262,6 @@ const HomePage = () => {
   useEffect(() => {
     const initializeData = async () => {
       await Promise.all([fetchPublicPosts(), fetchJoinedGroups()]);
-      setIsLoading(false);
     };
 
     initializeData();
@@ -290,7 +288,7 @@ const HomePage = () => {
   }, [hasMore, loading, fetchPublicPosts]);
 
   // Early return for loading state
-  if (isLoading || loading) {
+  if (loading) {
     return <LoadingScreen />;
   }
 

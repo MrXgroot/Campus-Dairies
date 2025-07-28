@@ -77,11 +77,11 @@ const NotificationPage = () => {
   return (
     <div className="max-w-xl mx-auto py-10 px-4 pb-20">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">Notifications</h2>
+        <h2 className="text-xl font-bold dark:text-gray-100">Notifications</h2>
         {notifications.length > 0 && (
           <button
             onClick={deleteAllNotifications}
-            className="text-sm text-red-600 hover:underline"
+            className="text-sm text-red-600 hover:underline "
           >
             Delete All
           </button>

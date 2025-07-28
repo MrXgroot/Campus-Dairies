@@ -355,7 +355,7 @@ const GroupChatPage = () => {
   const observerRef = useRef(null);
 
   // Store selectors
-  const groupDetails = useGroupStore((state) => state.groupDetails);
+  const groupDetails = useGroupStore((state) => state.groupMap[id]);
   const fetchGroupById = useGroupStore((state) => state.fetchGroupById);
   const loading = useGroupStore((state) => state.loading);
   const isUploading = useLoaderStore((state) => state.isUploading);
