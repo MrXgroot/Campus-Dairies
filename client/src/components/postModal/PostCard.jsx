@@ -1,59 +1,91 @@
-const PostCard = ({ post }) => {
+import { Heart, MessageCircle, MoreHorizontal } from "lucide-react";
+
+const PostCard = ({ post, user }) => {
   const isVideo = post.type === "video";
+
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800">
-      {/* Post Header */}
-      <div className="flex items-center gap-3 px-4 py-3">
-        <div className="w-8 h-8 rounded-full overflow-hidden">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden max-w-xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3">
           <img
-            src={post.user.avatar || "/placeholder.svg"}
-            alt={post.user.username}
-            className="w-full h-full object-cover"
+            src={user.avatar || "/placeholder.svg"}
+            alt={user.username}
+            className="w-10 h-10 rounded-full object-cover"
           />
+          <div className="text-sm">
+            <p className="font-semibold text-gray-900 dark:text-white">
+              {user.username}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {new Date().toLocaleDateString()}
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
-            {post.user.username}
-          </h3>
-        </div>
+        <button className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+          <MoreHorizontal className="w-5 h-5" />
+        </button>
       </div>
 
-      {/* Media (Image or Video) */}
-      <div className="aspect-square overflow-hidden">
+      {/* Media */}
+      <div className="aspect-square bg-black">
         {isVideo ? (
-          <video className="w-full h-full object-contain">
+          <video controls className="w-full h-full object-cover">
             <source src={post.image} type="video/mp4" />
-            Your browser does not support the video tag.
           </video>
         ) : (
           <img
             src={post.image || "/placeholder.svg"}
             alt="Post"
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
           />
         )}
       </div>
 
-      {/* Caption + Tagged Users */}
-      <div className="px-4 py-3">
-        <div className="text-gray-900 dark:text-white text-sm">
-          <span className="font-semibold">{post.user.username}</span>
-          <span className="ml-2">{post.caption}</span>
+      {/* Actions */}
+      <div className="px-4 pt-3 flex items-center gap-6 text-gray-600 dark:text-gray-300">
+        <button className="hover:text-red-500 transition-colors flex items-center gap-1">
+          <Heart className="w-5 h-5" />
+          <span className="text-sm">Like</span>
+        </button>
+        <button className="hover:text-blue-500 transition-colors flex items-center gap-1">
+          <MessageCircle className="w-5 h-5" />
+          <span className="text-sm">Comment</span>
+        </button>
+      </div>
 
-          {/* Tagged Users */}
-          {post.taggedUsers && post.taggedUsers.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {post.taggedUsers.map((user, index) => (
-                <span key={index} className="text-blue-600 dark:text-blue-400">
-                  @{user.username}
-                  {index < post.taggedUsers.length - 1 ? ", " : ""}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
+      {/* Caption */}
+      <div className="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
+        {post.caption && (
+          <p>
+            <span className="font-semibold">{post.user.username}</span>{" "}
+            {post.caption}
+          </p>
+        )}
+
+        {/* Tagged users */}
+        {post.taggedUsers?.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-1">
+            {post.taggedUsers.map((u, i) => (
+              <span
+                key={i}
+                className="text-xs text-blue-600 dark:text-blue-400"
+              >
+                @{u.username}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Comment count */}
+      <div className="px-4 pb-3 text-xs text-gray-500 dark:text-gray-400">
+        {post.comments?.length > 0 && (
+          <span>View all {post.comments.length} comments</span>
+        )}
       </div>
     </div>
   );
 };
+
 export default PostCard;

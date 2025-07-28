@@ -167,7 +167,7 @@ const usePostStore = create((set, get) => ({
   toggleLikePost: async (postId) => {
     try {
       const res = await api.post(`/posts/${postId}/like`);
-      const updatedPost = res.data.post;
+      const updatedPost = res.data.updatedPost;
 
       const { publicPosts, groupPostMap } = get();
 

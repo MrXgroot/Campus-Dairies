@@ -1,4 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  memo,
+} from "react";
 import moment from "moment";
 import VerifiedBadge from "../badges/VerifiedBadge";
 import usePostStore from "../../store/postStore";
@@ -20,8 +27,9 @@ import {
   Send,
 } from "lucide-react";
 
-const PostCard = ({ post, canDelete, handleDeletePost }) => {
-  const [liked, setLiked] = useState(post.isHearted);
+const PostCard = memo(({ post, canDelete, handleDeletePost }) => {
+  // State
+  const [liked, setLiked] = useState(post.isLiked);
   const [disliked, setDisliked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -30,18 +38,128 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
   const [isMuted, setIsMuted] = useState(true);
   const [isPausedByHold, setIsPausedByHold] = useState(false);
 
+  // Refs
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const clickTimeout = useRef(null);
   const optionsRef = useRef(null);
+
+  // Store hooks
   const reactToPost = usePostStore((state) => state.toggleLikePost);
   const openCommentModal = useModalStore((state) => state.openCommentModal);
   const user = useAuthStore((state) => state.user);
   const { sendWaveToUser } = useUserStore();
-  useEffect(() => {
-    setLiked(post.isHearted);
-  }, [post.isHearted]);
-  // Auto play when visible
+
+  // Memoized values
+  const timeAgo = useMemo(
+    () => moment(post.createdAt).fromNow(),
+    [post.createdAt]
+  );
+
+  const likesCount = useMemo(() => post.likes.length, [post.likes.length]);
+
+  const commentsCount = useMemo(
+    () => post.comments.length,
+    [post.comments.length]
+  );
+
+  const hasTaggedUsers = useMemo(
+    () => post.taggedUsers.length > 0,
+    [post.taggedUsers.length]
+  );
+
+  const canDeletePost = useMemo(
+    () => canDelete || user?.isVerified,
+    [canDelete, user?.isVerified]
+  );
+
+  // Callbacks
+  const handleLike = useCallback(() => {
+    setLiked((prev) => !prev);
+    reactToPost(post._id);
+
+    if (!liked) {
+      setShowHeartAnimation(true);
+      setTimeout(() => setShowHeartAnimation(false), 1000);
+    }
+  }, [liked, reactToPost, post._id]);
+
+  const handleClick = useCallback(() => {
+    if (clickTimeout.current) return;
+
+    clickTimeout.current = setTimeout(() => {
+      setIsMuted((prev) => !prev);
+      clickTimeout.current = null;
+    }, 250);
+  }, []);
+
+  const handleDoubleClick = useCallback(() => {
+    if (clickTimeout.current) {
+      clearTimeout(clickTimeout.current);
+      clickTimeout.current = null;
+    }
+    if (!liked) handleLike();
+  }, [liked, handleLike]);
+
+  const handleLongPressStart = useCallback(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      setIsPausedByHold(true);
+    }
+  }, []);
+
+  const handleLongPressEnd = useCallback(() => {
+    const video = videoRef.current;
+    if (video && isPausedByHold) {
+      video.play().catch(() => {});
+      setIsPausedByHold(false);
+    }
+  }, [isPausedByHold]);
+
+  const handleClickOutside = useCallback((e) => {
+    if (optionsRef.current && !optionsRef.current.contains(e.target))
+      setShowOptions(false);
+  }, []);
+
+  const handleOpenComments = useCallback(() => {
+    openCommentModal(post._id);
+  }, [openCommentModal, post._id]);
+
+  const sendWave = useCallback(() => {
+    sendWaveToUser(post.createdBy._id);
+    Toast.success(`Sent hi to ${post.createdBy.username}`);
+  }, [sendWaveToUser, post.createdBy._id, post.createdBy.username]);
+
+  const toggleOptions = useCallback(() => {
+    setShowOptions((prev) => !prev);
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    setIsMuted((prev) => !prev);
+  }, []);
+
+  const toggleDisliked = useCallback(() => {
+    setDisliked((prev) => !prev);
+  }, []);
+
+  const toggleBookmarked = useCallback(() => {
+    setBookmarked((prev) => !prev);
+  }, []);
+
+  const handleReport = useCallback(() => {
+    console.log("Report");
+  }, []);
+
+  const handleHide = useCallback(() => {
+    console.log("Hide");
+  }, []);
+
+  const handleDelete = useCallback(() => {
+    handleDeletePost(post._id);
+  }, [handleDeletePost, post._id]);
+
+  // Effects
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -62,65 +180,21 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
     return () => observer.disconnect();
   }, []);
 
-  const handleLike = () => {
-    setLiked((prev) => !prev);
-    reactToPost(post._id);
-
-    if (!liked) {
-      setShowHeartAnimation(true);
-      setTimeout(() => setShowHeartAnimation(false), 1000);
-    }
-  };
-
-  const handleClick = () => {
-    if (clickTimeout.current) return;
-
-    clickTimeout.current = setTimeout(() => {
-      setIsMuted((prev) => !prev);
-      clickTimeout.current = null;
-    }, 250);
-  };
-  const handleDoubleClick = () => {
-    if (clickTimeout.current) {
-      clearTimeout(clickTimeout.current);
-      clickTimeout.current = null;
-    }
-    if (!liked) handleLike();
-  };
-
-  const handleLongPressStart = () => {
-    const video = videoRef.current;
-    if (video) {
-      video.pause();
-      setIsPausedByHold(true);
-    }
-  };
-
-  const handleLongPressEnd = () => {
-    const video = videoRef.current;
-    if (video && isPausedByHold) {
-      video.play().catch(() => {});
-      setIsPausedByHold(false);
-    }
-  };
-  const handleClickOutside = (e) => {
-    if (optionsRef.current && !optionsRef.current.contains(e.target))
-      setShowOptions(false);
-  };
-
-  const handleOpenComments = () => {
-    openCommentModal(post._id);
-  };
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  });
-  const sendWave = () => {
-    sendWaveToUser(post.createdBy._id);
-    Toast.success(`Sent hi to ${post.createdBy.username}`);
-  };
+  }, [handleClickOutside]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimeout.current) {
+        clearTimeout(clickTimeout.current);
+      }
+    };
+  }, []);
 
   return (
     <div
@@ -130,9 +204,7 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          <div
-            className={`w-10 h-10 rounded-full overflow-hidden ring-2 ring-gray-300 dark:ring-gray-600 `}
-          >
+          <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-gray-300 dark:ring-gray-600">
             <img
               src={post.createdBy.avatar}
               alt="avatar"
@@ -148,13 +220,13 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
               {post.createdBy.isVerified && <VerifiedBadge />}
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {moment(post.createdAt).fromNow()}
+              {timeAgo}
             </p>
           </div>
         </div>
         <div ref={optionsRef} className="relative">
           <button
-            onClick={() => setShowOptions(!showOptions)}
+            onClick={toggleOptions}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-300" />
@@ -162,17 +234,20 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
           {showOptions && (
             <div className="absolute right-0 top-10 bg-white dark:bg-gray-700 rounded-lg shadow-lg py-2 z-10 w-32">
               <button
-                onClick={() => console.log("Report")}
+                onClick={handleReport}
                 className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-sm"
               >
                 Report
               </button>
-              <button className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-sm">
+              <button
+                onClick={handleHide}
+                className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-sm"
+              >
                 Hide
               </button>
-              {(canDelete || user?.isVerified) && (
+              {canDeletePost && (
                 <button
-                  onClick={() => handleDeletePost(post._id)}
+                  onClick={handleDelete}
                   className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 text-sm"
                 >
                   Delete
@@ -220,7 +295,7 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
         {/* Mute Button */}
         {post.type === "video" && (
           <button
-            onClick={() => setIsMuted((prev) => !prev)}
+            onClick={toggleMute}
             className="absolute bottom-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition"
           >
             {isMuted ? (
@@ -258,7 +333,7 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
               <Share2 className="w-7 h-7 text-gray-700 dark:text-gray-300" />
             </button>
             <button
-              onClick={() => setDisliked(!disliked)}
+              onClick={toggleDisliked}
               className="active:scale-125 transition-transform"
             >
               <Send
@@ -270,7 +345,7 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
             </button>
           </div>
           <button
-            onClick={() => setBookmarked(!bookmarked)}
+            onClick={toggleBookmarked}
             className="active:scale-125 transition-transform"
           >
             <Bookmark
@@ -286,9 +361,8 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
         {/* Reactions Count */}
         <div className="flex items-center gap-2 mb-2">
           <span className="font-semibold text-gray-900 dark:text-white">
-            {post.likes.length} likes
+            {likesCount} likes
           </span>
-
           <TrendingUp className="w-4 h-4 text-green-500" />
         </div>
 
@@ -297,7 +371,8 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
           <span className="font-semibold">{post.createdBy.username}</span>
           <span className="ml-2">{post.caption}</span>
         </div>
-        {post.taggedUsers.length > 0 &&
+
+        {hasTaggedUsers &&
           post.taggedUsers.map((taggedUser) => (
             <div
               key={taggedUser._id}
@@ -310,17 +385,19 @@ const PostCard = ({ post, canDelete, handleDeletePost }) => {
           ))}
 
         {/* Comments */}
-        {post.comments.length > 0 && (
+        {commentsCount > 0 && (
           <button
             onClick={handleOpenComments}
             className="text-sm text-gray-500 dark:text-gray-400 mt-2 hover:text-gray-700 dark:hover:text-gray-200"
           >
-            {`View all ${post.comments.length} comments`}
+            {`View all ${commentsCount} comments`}
           </button>
         )}
       </div>
     </div>
   );
-};
+});
+
+PostCard.displayName = "PostCard";
 
 export default PostCard;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import useProfileStore from "../store/profileStore";
 import usePostStore from "../store/postStore";
 import HamburgerMenu from "../components/profileComponents/HamburgerMenu";
@@ -22,149 +22,9 @@ import {
   Users,
 } from "lucide-react";
 import PostCard from "../components/post/PostCard";
-
-export default function InstagramProfilePage() {
-  const [activeTab, setActiveTab] = useState("posts");
-  const [isEditprofileOpen, setIsEditProfileOpen] = useState(false);
-
-  const profile = useProfileStore((state) => state.profile);
-  const loading = useProfileStore((state) => state.loading);
-  const fetchProfile = useProfileStore((state) => state.fetchProfile);
-  const posts = usePostStore((state) => state.posts);
-  const loadingPosts = usePostStore((state) => state.loadingPosts);
-  const tagged = usePostStore((state) => state.tagged);
-  const fetchUploadedPosts = usePostStore((state) => state.fetchUploadedPosts);
-  const fetchTaggedPosts = usePostStore((state) => state.fetchTaggedPosts);
-  const updateProfile = useProfileStore((state) => state.updateProfile);
-  const deleteUploadedPost = usePostStore((state) => state.deleteUploadedPost);
-  const fileInputRef = useRef();
-
-  useEffect(() => {
-    fetchProfile();
-    fetchUploadedPosts();
-    fetchTaggedPosts();
-  }, []);
-
-  // Handle profile photo change
-  const onProfileButtonClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleDeletePost = (postId) => {
-    deleteUploadedPost(postId);
-  };
-
-  const onUploadAvatar = (file) => {
-    updateProfile(file);
-  };
-
-  const handleUpdateProfile = (file) => {
-    console.log(file);
-    updateProfile(file);
-  };
-  // Handle post editing
-  const handleEdit = (id) => {
-    const post = posts.find((p) => p.id === id);
-    if (post) {
-      const newCaption = prompt("Edit caption:", post.caption);
-      if (newCaption !== null && newCaption.trim()) {
-        setPosts(
-          posts.map((p) =>
-            p.id === id ? { ...p, caption: newCaption.trim() } : p
-          )
-        );
-      }
-    }
-    setOpenMenu(null);
-  };
-
-  // Handle logout
-  const handleLogout = () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      alert("Logged out successfully!");
-      setShowHamburgerMenu(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="h-10 flex justify-center items-center">
-        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // add loadingPosts to the post section
-  return (
-    <div className="min-h-screen bg-white dark:bg-black">
-      {/* Header */}
-      <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 z-40">
-        <div className="flex justify-between items-center max-w-md mx-auto">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:scale-105 transition-transform cursor-pointer">
-            CampusDairies
-          </h1>
-          <HamburgerMenu />
-        </div>
-      </div>
-
-      <div className="max-w-md mx-auto ">
-        {/* Profile Header with Stats */}
-        <ProfileHeaderAndStats
-          profile={profile}
-          onProfileButtonClick={onProfileButtonClick}
-          onUploadAvatar={onUploadAvatar}
-          fileInputRef={fileInputRef}
-          openEditProfile={() => setIsEditProfileOpen(true)}
-        />
-
-        <div className="flex bg-white dark:bg-gray-800 dark:border-b dark:border-gray-700 ">
-          <button
-            onClick={() => setActiveTab("posts")}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              activeTab === "posts"
-                ? "text-purple-400 border-b-2 border-purple-400"
-                : "text-gray-400 hover:text-gray-300"
-            }`}
-          >
-            My Posts ({posts.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("tagged")}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              activeTab === "tagged"
-                ? "text-purple-400 border-b-2 border-purple-400"
-                : "text-gray-400 hover:text-gray-300"
-            }`}
-          >
-            Tagged ({tagged.length})
-          </button>
-        </div>
-        {/* Posts Content */}
-        {activeTab === "posts"
-          ? posts.map((post) => (
-              <PostCard
-                key={post._id}
-                post={post}
-                canDelete={true}
-                handleDeletePost={handleDeletePost}
-              />
-            ))
-          : tagged.map((post) => <PostCard key={post._id} post={post} />)}
-      </div>
-
-      <EditProfileModal
-        isOpen={isEditprofileOpen}
-        onClose={() => setIsEditProfileOpen(false)}
-        onSubmitFormData={handleUpdateProfile}
-        fileInputRef={fileInputRef}
-        onProfileButtonClick={onProfileButtonClick}
-      />
-    </div>
-  );
-}
-
 import imageCompression from "browser-image-compression";
 
+// Memoized child components
 const ProfileHeaderAndStats = ({
   profile,
   onUploadAvatar,
@@ -174,34 +34,71 @@ const ProfileHeaderAndStats = ({
 }) => {
   const [showOptions, setShowOptions] = useState(false);
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file || !file.type.startsWith("image/")) return;
+  // Memoize file change handler
+  const handleFileChange = useCallback(
+    async (e) => {
+      const file = e.target.files[0];
+      if (!file || !file.type.startsWith("image/")) return;
 
-    try {
-      const options = {
-        maxSizeMB: 0.2,
-        maxWidthOrHeight: 500,
-        useWebWorker: true,
-      };
-      const compressedFile = await imageCompression(file, options);
+      try {
+        const options = {
+          maxSizeMB: 0.2,
+          maxWidthOrHeight: 500,
+          useWebWorker: true,
+        };
+        const compressedFile = await imageCompression(file, options);
 
-      const formData = new FormData();
-      formData.append("avatar", compressedFile);
-      formData.append("isAvatar", "true");
+        const formData = new FormData();
+        formData.append("avatar", compressedFile);
+        formData.append("isAvatar", "true");
 
-      onUploadAvatar(formData);
-    } catch (error) {
-      console.error("Avatar compression failed", error);
-    }
-  };
+        onUploadAvatar(formData);
+      } catch (error) {
+        console.error("Avatar compression failed", error);
+      }
+    },
+    [onUploadAvatar]
+  );
+
+  // Memoize options toggle
+  const toggleOptions = useCallback(() => {
+    setShowOptions((prev) => !prev);
+  }, []);
+
+  // Memoize edit profile handler
+  const handleEditProfile = useCallback(() => {
+    openEditProfile();
+    setShowOptions(false);
+  }, [openEditProfile]);
+
+  // Memoize stats data
+  const statsData = useMemo(
+    () => [
+      {
+        icon: <Heart fill="red" strokeWidth={0} className="w-5 h-5 mb-1" />,
+        value: profile.stats?.heartCount || 0,
+        label: "Likes",
+      },
+      {
+        icon: <Users className="w-5 h-5 mb-1 text-purple-500" />,
+        value: profile.stats?.followers || 0,
+        label: "Followers",
+      },
+      {
+        icon: <span className="text-xl mb-1">👋</span>,
+        value: profile.stats?.waveCount || 0,
+        label: "Waves",
+      },
+    ],
+    [profile.stats]
+  );
 
   return (
     <div className="relative p-6 rounded-xl bg-white dark:bg-gray-900 shadow-sm">
       {/* Options Menu */}
       <div className="absolute top-4 right-4">
         <button
-          onClick={() => setShowOptions(!showOptions)}
+          onClick={toggleOptions}
           className="text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
         >
           <MoreVertical size={20} />
@@ -209,10 +106,7 @@ const ProfileHeaderAndStats = ({
         {showOptions && (
           <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-md z-50">
             <button
-              onClick={() => {
-                openEditProfile();
-                setShowOptions(false);
-              }}
+              onClick={handleEditProfile}
               className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
             >
               Update Profile
@@ -263,33 +157,20 @@ const ProfileHeaderAndStats = ({
 
       {/* Stats */}
       <div className="mt-6 grid grid-cols-3 gap-4 text-center">
-        <div className="flex flex-col items-center bg-gray-50 dark:bg-gray-800 p-3 rounded-lg shadow-sm">
-          <Heart fill="red" strokeWidth={0} className="w-5 h-5 mb-1" />
-          <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-            {profile.stats.heartCount || 0}
-          </p>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            Likes
-          </span>
-        </div>
-        <div className="flex flex-col items-center bg-gray-50 dark:bg-gray-800 p-3 rounded-lg shadow-sm">
-          <Users className="w-5 h-5 mb-1 text-purple-500" />
-          <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-            {profile.stats.followers || 0}
-          </p>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            Followers
-          </span>
-        </div>
-        <div className="flex flex-col items-center bg-gray-50 dark:bg-gray-800 p-3 rounded-lg shadow-sm">
-          <span className="text-xl mb-1">👋</span>
-          <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-            {profile.stats.waveCount || 0}
-          </p>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            Waves
-          </span>
-        </div>
+        {statsData.map((stat, index) => (
+          <div
+            key={index}
+            className="flex flex-col items-center bg-gray-50 dark:bg-gray-800 p-3 rounded-lg shadow-sm"
+          >
+            {stat.icon}
+            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+              {stat.value}
+            </p>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {stat.label}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -307,7 +188,8 @@ const EditProfileModal = ({
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState("");
 
-  const handleFileChange = async (e) => {
+  // Memoize file change handler
+  const handleFileChange = useCallback(async (e) => {
     const file = e.target.files[0];
     if (!file || !file.type.startsWith("image/")) return;
 
@@ -324,19 +206,24 @@ const EditProfileModal = ({
     } catch (err) {
       console.error("Compression failed:", err);
     }
-  };
+  }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append("username", username);
-    formData.append("quote", bio);
-    if (avatar) formData.append("avatar", avatar);
+  // Memoize submit handler
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append("username", username);
+      formData.append("quote", bio);
+      if (avatar) formData.append("avatar", avatar);
 
-    onSubmitFormData(formData);
-    onClose();
-  };
+      onSubmitFormData(formData);
+      onClose();
+    },
+    [username, bio, avatar, onSubmitFormData, onClose]
+  );
 
+  // Cleanup effect
   useEffect(() => {
     return () => {
       if (avatarPreview?.startsWith("blob:"))
@@ -393,9 +280,7 @@ const EditProfileModal = ({
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  onProfileButtonClick();
-                }}
+                onClick={onProfileButtonClick}
                 className="absolute -bottom-1 -right-1 w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center hover:bg-purple-700 transition-colors"
               >
                 <Plus className="w-4 h-4 text-white" />
@@ -458,3 +343,155 @@ const EditProfileModal = ({
     </div>
   );
 };
+
+export default function InstagramProfilePage() {
+  const [activeTab, setActiveTab] = useState("posts");
+  const [isEditprofileOpen, setIsEditProfileOpen] = useState(false);
+
+  // Store selectors with shallow comparison
+  const profile = useProfileStore((state) => state.profile);
+  const loading = useProfileStore((state) => state.loading);
+  const fetchProfile = useProfileStore((state) => state.fetchProfile);
+  const posts = usePostStore((state) => state.posts);
+  const loadingPosts = usePostStore((state) => state.loadingPosts);
+  const tagged = usePostStore((state) => state.tagged);
+  const fetchUploadedPosts = usePostStore((state) => state.fetchUploadedPosts);
+  const fetchTaggedPosts = usePostStore((state) => state.fetchTaggedPosts);
+  const updateProfile = useProfileStore((state) => state.updateProfile);
+  const deleteUploadedPost = usePostStore((state) => state.deleteUploadedPost);
+
+  const fileInputRef = useRef();
+
+  // Memoize data fetching effect
+  useEffect(() => {
+    fetchProfile();
+    fetchUploadedPosts();
+    fetchTaggedPosts();
+  }, [fetchProfile, fetchUploadedPosts, fetchTaggedPosts]);
+
+  // Memoized handlers
+  const handleProfileButtonClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleDeletePost = useCallback(
+    (postId) => {
+      deleteUploadedPost(postId);
+    },
+    [deleteUploadedPost]
+  );
+
+  const handleUpdateProfile = useCallback(
+    (file) => {
+      console.log(file);
+      updateProfile(file);
+    },
+    [updateProfile]
+  );
+
+  const handleUploadAvatar = useCallback(
+    (formData) => {
+      updateProfile(formData);
+    },
+    [updateProfile]
+  );
+
+  const openEditProfile = useCallback(() => {
+    setIsEditProfileOpen(true);
+  }, []);
+
+  const closeEditProfile = useCallback(() => {
+    setIsEditProfileOpen(false);
+  }, []);
+
+  // Memoize tab handlers
+  const handlePostsTab = useCallback(() => setActiveTab("posts"), []);
+  const handleTaggedTab = useCallback(() => setActiveTab("tagged"), []);
+
+  // Memoize tab button classes
+  const postsTabClass = useMemo(
+    () =>
+      `flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+        activeTab === "posts"
+          ? "text-purple-400 border-b-2 border-purple-400"
+          : "text-gray-400 hover:text-gray-300"
+      }`,
+    [activeTab]
+  );
+
+  const taggedTabClass = useMemo(
+    () =>
+      `flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+        activeTab === "tagged"
+          ? "text-purple-400 border-b-2 border-purple-400"
+          : "text-gray-400 hover:text-gray-300"
+      }`,
+    [activeTab]
+  );
+
+  // Memoize posts to display
+  const displayedPosts = useMemo(() => {
+    return activeTab === "posts" ? posts : tagged;
+  }, [activeTab, posts, tagged]);
+
+  // Loading component
+  if (loading) {
+    return (
+      <div className="h-10 flex justify-center items-center">
+        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-black">
+      {/* Header */}
+      <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 p-4 z-40">
+        <div className="flex justify-between items-center max-w-md mx-auto">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:scale-105 transition-transform cursor-pointer">
+            CampusDairies
+          </h1>
+          <HamburgerMenu />
+        </div>
+      </div>
+
+      <div className="max-w-md mx-auto">
+        {/* Profile Header with Stats */}
+        <ProfileHeaderAndStats
+          profile={profile}
+          onProfileButtonClick={handleProfileButtonClick}
+          onUploadAvatar={handleUploadAvatar}
+          fileInputRef={fileInputRef}
+          openEditProfile={openEditProfile}
+        />
+
+        <div className="flex bg-white dark:bg-gray-800 dark:border-b dark:border-gray-700">
+          <button onClick={handlePostsTab} className={postsTabClass}>
+            My Posts ({posts.length})
+          </button>
+          <button onClick={handleTaggedTab} className={taggedTabClass}>
+            Tagged ({tagged.length})
+          </button>
+        </div>
+
+        {/* Posts Content */}
+        {displayedPosts.map((post) => (
+          <PostCard
+            key={post._id}
+            post={post}
+            canDelete={activeTab === "posts"}
+            handleDeletePost={handleDeletePost}
+          />
+        ))}
+      </div>
+
+      <EditProfileModal
+        isOpen={isEditprofileOpen}
+        onClose={closeEditProfile}
+        onSubmitFormData={handleUpdateProfile}
+        fileInputRef={fileInputRef}
+        onProfileButtonClick={handleProfileButtonClick}
+      />
+    </div>
+  );
+}

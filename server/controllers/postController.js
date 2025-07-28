@@ -8,6 +8,7 @@ const Notification = require("../models/Notification");
 const { createNotification } = require("../controllers/notificationController");
 exports.getMyPosts = async (req, res) => {
   const user = req.user;
+  const userId = req.user.id;
   if (!user) {
     return res.status(404).json({ error: "No user found" });
   }
@@ -15,11 +16,15 @@ exports.getMyPosts = async (req, res) => {
     const posts = await Post.find({ createdBy: req.user.id })
       .sort({ createdAt: -1 })
       .populate("createdBy", "username avatar")
-      .populate({
-        path: "comments",
-        populate: { path: "user", select: "username avatar" },
-      });
-    res.status(200).json(posts);
+      .populate("taggedUsers", "username")
+      .lean();
+    const enrichedPosts = posts.map((post) => ({
+      ...post,
+      isLiked: post.likes.some((id) => id.toString() === userId),
+      isReported: post.reports?.some((id) => id.toString() === userId),
+    }));
+
+    res.status(200).json(enrichedPosts);
   } catch (err) {
     console.error("Fetch my uploads failed:", err);
     res.status(500).json({ error: "Server error" });
@@ -33,9 +38,16 @@ exports.getTaggedPosts = async (req, res) => {
     const posts = await Post.find({ taggedUsers: userId })
       .populate("createdBy", "name username avatar")
       .populate("taggedUsers", "username")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.status(200).json(posts);
+    const enrichedPosts = posts.map((post) => ({
+      ...post,
+      isLiked: post.likes.some((id) => id.toString() === userId),
+      isReported: post.reports?.some((id) => id.toString() === userId),
+    }));
+
+    res.status(200).json(enrichedPosts);
   } catch (err) {
     console.error("Fetch tagged posts failed:", err);
     res.status(500).json({ error: "Server error" });
@@ -219,10 +231,8 @@ exports.getPublicPosts = async (req, res) => {
 
     const enrichedPosts = filteredPosts.map((post) => ({
       ...post,
-      isHearted: post.reactions?.hearts?.some((id) => id.toString() === userId),
+      isLiked: post.likes.some((id) => id.toString() === userId),
       isReported: post.reports?.some((id) => id.toString() === userId),
-      totalHearts: post.reactions?.hearts?.length || 0,
-      totalReports: post.reports?.length || 0,
     }));
 
     res.status(200).json(enrichedPosts);
@@ -251,10 +261,14 @@ exports.toggleLikePost = async (req, res) => {
     }
 
     await post.save();
+    const plainPost = post.toObject();
+    plainPost.isLiked = !alreadyLiked;
 
-    res
-      .status(200)
-      .json({ message: "Like status updated", liked: !alreadyLiked, post });
+    res.status(200).json({
+      message: "Like status updated",
+      liked: !alreadyLiked,
+      updatedPost: plainPost,
+    });
   } catch (err) {
     console.error("Like toggle error:", err);
     res.status(500).json({ error: "Server error" });
@@ -292,11 +306,15 @@ exports.getGroupPosts = async (req, res) => {
       .limit(limit)
       .populate("createdBy", "username avatar isVerified")
       .populate("taggedUsers", "username avatar")
-      .populate({
-        path: "comments",
-        populate: { path: "createdBy", select: "username avatar" },
-      });
-    res.status(200).json(posts);
+      .lean();
+
+    const enrichedPosts = posts.map((post) => ({
+      ...post,
+      isLiked: post.likes.some((id) => id.toString() === userId),
+      isReported: post.reports?.some((id) => id.toString() === userId),
+    }));
+
+    res.status(200).json(enrichedPosts);
   } catch (err) {
     console.error("Error fetching group posts:", err);
     res.status(500).json({ error: "Server error" });

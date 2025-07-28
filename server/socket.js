@@ -26,7 +26,7 @@ const initSocketServer = (io) => {
       console.log("🔴 Socket disconnected:", socket.id);
       if (socket.userId) {
         onlineUsers.delete(socket.userId);
-        io.emit("online-users", Array.from(onlineUsers));
+        io.emit("online-users", Array.from(onlineUsers.values()));
       }
     });
   });

@@ -9,6 +9,7 @@ const EditPage = ({
   taggedUsers,
   removeTag,
   caption,
+  user,
 }) => {
   return (
     <div className="h-full flex flex-col">
@@ -39,7 +40,7 @@ const EditPage = ({
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
             <img
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face"
+              src={user.avatar}
               alt="Your avatar"
               className="w-full h-full object-cover"
             />

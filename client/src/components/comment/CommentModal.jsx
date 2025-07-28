@@ -5,63 +5,6 @@ import useModalStore from "../../store/modalStore";
 import { formatDateTime } from "../../utils/formatDate";
 import moment from "moment";
 const CommentModal = ({ isOpen, onClose }) => {
-  // const [comments, setComments] = useState([
-  //   {
-  //     id: 1,
-  //     user: {
-  //       username: "alice_wonder",
-  //       avatar:
-  //         "https://images.unsplash.com/photo-1494790108755-2616b9e5d2f0?w=32&h=32&fit=crop&crop=face&round=true",
-  //       isVerified: true,
-  //     },
-  //     text: "This is amazing! Love the composition 📸",
-  //     timestamp: "2h",
-  //     likes: 12,
-  //     isLiked: false,
-  //     replies: [
-  //       {
-  //         id: 11,
-  //         user: {
-  //           username: "bob_photographer",
-  //           avatar:
-  //             "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face&round=true",
-  //         },
-  //         text: "I agree! The lighting is perfect",
-  //         timestamp: "1h",
-  //         likes: 3,
-  //         isLiked: true,
-  //         replyingTo: "alice_wonder",
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     id: 2,
-  //     user: {
-  //       username: "creative_soul",
-  //       avatar:
-  //         "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&crop=face&round=true",
-  //     },
-  //     text: "Stunning work! 🔥🔥",
-  //     timestamp: "3h",
-  //     likes: 8,
-  //     isLiked: true,
-  //     replies: [],
-  //   },
-  //   {
-  //     id: 3,
-  //     user: {
-  //       username: "art_lover99",
-  //       avatar:
-  //         "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&crop=face&round=true",
-  //     },
-  //     text: "Can you share the camera settings you used for this shot?",
-  //     timestamp: "4h",
-  //     likes: 5,
-  //     isLiked: false,
-  //     replies: [],
-  //   },
-  // ]);
-
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState("");

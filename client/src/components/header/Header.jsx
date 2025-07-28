@@ -1,14 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Maximize2, Minimize2, Sun, Moon } from "lucide-react";
 import useLoaderStore from "../../store/loaderStore"; // Adjust path as needed
 
 const Header = ({ searchTerm, setSearchTerm, placeholder }) => {
-  const [darkMode, setDarkMode] = useState(
-    localStorage.getItem("theme") === "dark"
-  );
+  const [darkMode, setDarkMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { isUploading } = useLoaderStore();
 
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "light";
+
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+      setDarkMode(true);
+    }
+  });
   const toggleDarkMode = () => {
     document.documentElement.classList.toggle("dark");
     const newTheme = document.documentElement.classList.contains("dark")

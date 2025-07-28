@@ -14,7 +14,7 @@ import EditPage from "./pages/EditPage";
 import PostModalHeader from "./PostModalHeader";
 import TagUserModal from "./TagUserModal";
 import api from "../../utils/api";
-
+import useAuthStore from "../../store/authStore";
 // import { motion, AnimatePresence } from "framer-motion";
 //everythingg is fine jsut tagged user issue correct that afterards
 
@@ -34,7 +34,7 @@ const PostModal = ({ show, onClose, id = null }) => {
   const setUploading = useLoaderStore((state) => state.setUploading);
   const MAX_VIDEO_SIZE_MB = 50;
   const { fetchTaggableUsers, people, loadingPeople } = useUserStore();
-
+  const { user } = useAuthStore();
   const { compressMedia } = useMediaCompressor(async (compressedFile) => {
     if (!compressedFile) {
       toast.error("Compression failed");
@@ -87,9 +87,8 @@ const PostModal = ({ show, onClose, id = null }) => {
       toast.error("Upload failed");
     }
   });
-
   const debouncedSearch = useMemo(
-    () => debounce((term) => fetchTaggableUsers(term), 500),
+    () => debounce((term) => fetchTaggableUsers(term || "mrx"), 300),
     []
   );
 
@@ -223,6 +222,7 @@ const PostModal = ({ show, onClose, id = null }) => {
             taggedUsers={taggedUsers}
             removeTag={removeTag}
             caption={caption}
+            user={user}
           />
         )}
 
@@ -230,7 +230,7 @@ const PostModal = ({ show, onClose, id = null }) => {
         {step === 3 && (
           <div className="h-full overflow-y-auto bg-gray-50 dark:bg-black">
             <div className="p-4">
-              <PostCard post={mockPost} />
+              <PostCard post={mockPost} user={user} />
             </div>
           </div>
         )}
