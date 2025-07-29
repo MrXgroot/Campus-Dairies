@@ -13,6 +13,7 @@ import useModalStore from "../../store/modalStore";
 import useAuthStore from "../../store/authStore";
 import Toast from "react-hot-toast";
 import useUserStore from "../../store/userStore";
+import useSoundStore from "../../store/soundStore";
 import {
   Heart,
   MessageCircle,
@@ -35,7 +36,8 @@ const PostCard = memo(({ post, canDelete, handleDeletePost }) => {
   const [showComments, setShowComments] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  // const [isMuted, setIsMuted] = useState(true);
+  const { isMuted, setIsMuted } = useSoundStore();
   const [isPausedByHold, setIsPausedByHold] = useState(false);
 
   // Refs
