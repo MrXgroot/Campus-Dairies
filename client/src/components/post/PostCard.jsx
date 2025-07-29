@@ -56,7 +56,7 @@ const PostCard = memo(({ post, canDelete, handleDeletePost }) => {
     [post.createdAt]
   );
 
-  const likesCount = useMemo(() => post.likes.length, [post.likes.length]);
+  const [likesCount, setLikesCount] = useState(post.likes.length);
 
   const commentsCount = useMemo(
     () => post.comments.length,
@@ -76,13 +76,15 @@ const PostCard = memo(({ post, canDelete, handleDeletePost }) => {
   // Callbacks
   const handleLike = useCallback(() => {
     setLiked((prev) => !prev);
-    reactToPost(post._id);
 
     if (!liked) {
+      setLikesCount((prev) => prev + 1);
       setShowHeartAnimation(true);
       setTimeout(() => setShowHeartAnimation(false), 1000);
+    } else {
+      setLikesCount((prev) => prev - 1);
     }
-  }, [liked, reactToPost, post._id]);
+  }, [liked, post._id]);
 
   const handleClick = useCallback(() => {
     if (clickTimeout.current) return;

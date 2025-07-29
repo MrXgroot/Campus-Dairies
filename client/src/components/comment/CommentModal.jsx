@@ -4,6 +4,7 @@ import useCommentStore from "../../store/commentStore";
 import useModalStore from "../../store/modalStore";
 import { formatDateTime } from "../../utils/formatDate";
 import moment from "moment";
+import useAuthStore from "../../store/authStore";
 const CommentModal = ({ isOpen, onClose }) => {
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState(null);
@@ -22,6 +23,7 @@ const CommentModal = ({ isOpen, onClose }) => {
   const modalRef = useRef(null);
   const commentInputRef = useRef(null);
 
+  const { user } = useAuthStore();
   const observerRef = useRef(null);
   useEffect(() => {
     resetComments();
@@ -46,7 +48,7 @@ const CommentModal = ({ isOpen, onClose }) => {
   const handleAddComment = () => {
     if (!newComment.trim()) return;
 
-    addComment(currentPost, newComment);
+    addComment(currentPost, newComment, user);
     setNewComment("");
   };
 
@@ -57,7 +59,7 @@ const CommentModal = ({ isOpen, onClose }) => {
 
   const handleAddReply = () => {
     if (!replyText.trim() || !replyingTo) return;
-    replyToComment(replyingTo.commentId, replyText, replyingTo.username);
+    replyToComment(replyingTo.commentId, replyText, replyingTo.username, user);
     setReplyText("");
     setReplyingTo(null);
   };
@@ -224,7 +226,10 @@ const CommentModal = ({ isOpen, onClose }) => {
           )}
           <div className="flex items-center gap-3">
             <img
-              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face&round=true"
+              src={
+                user.avatar ||
+                "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face&round=true"
+              }
               alt="Your avatar"
               className="w-8 h-8 rounded-full object-cover"
             />

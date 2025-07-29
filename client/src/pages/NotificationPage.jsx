@@ -52,7 +52,7 @@ const NotificationPage = () => {
           dragConstraints={{ left: 0, right: 0 }}
           whileDrag={{ scale: 0.97 }}
           onDragEnd={(e, info) => {
-            if (info.offset.x < -200) {
+            if (info.offset.x < -150) {
               handleDeleteNotification(notification._id); // swipe left to delete
             }
           }}

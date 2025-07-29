@@ -42,7 +42,6 @@ const usePostStore = create((set, get) => ({
 
     const alreadyFetchedPosts = publicPosts.length;
     const expectedPosts = (currentPage + 1) * limit;
-    console.log(loadingPosts);
     // If we already have enough posts for the next page, skip fetching
     if (alreadyFetchedPosts >= expectedPosts) return;
 

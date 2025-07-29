@@ -10,6 +10,7 @@ self.onmessage = async (e) => {
 
     if (!ffmpeg.loaded) {
       console.log("[Worker] Loading ffmpeg...");
+
       await ffmpeg.load();
       console.log("[Worker] ffmpeg loaded");
     }
