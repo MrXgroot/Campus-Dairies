@@ -50,7 +50,9 @@ const SinglePostDisplay = lazy(() =>
     default: module.default,
   }))
 );
-
+const MessagePage = lazy(() =>
+  import("./pages/MessagePage").then((module) => ({ default: module.default }))
+);
 // Non-lazy components
 import Navbar from "./components/navbar/Navbar";
 import CommentModal from "./components/comment/CommentModal";
@@ -82,6 +84,7 @@ const authenticatedRoutes = [
   { path: "/notifications", element: <NotificationsPage /> },
   { path: "/profile", element: <Profile /> },
   { path: "/post/:id", element: <SinglePostDisplay /> },
+  { path: "/messagewall", element: <MessagePage /> },
 ];
 
 // Memoized Comment Modal Component

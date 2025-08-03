@@ -97,49 +97,64 @@ const StoryItem = memo(({ story, onClick }) => {
   );
 });
 
-const FilterSection = memo(({ filters, selectedFilter, setSelectedFilter }) => {
-  const handleFilterClick = useCallback(
-    (filter) => {
-      setSelectedFilter(filter);
-    },
-    [setSelectedFilter]
-  );
+const FilterSection = memo(
+  ({ filters, selectedFilter, setSelectedFilter, loading }) => {
+    const handleFilterClick = useCallback(
+      (filter) => {
+        setSelectedFilter(filter);
+      },
+      [setSelectedFilter]
+    );
 
-  return (
-    <div className="max-w-md mx-auto px-4 py-2">
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-        {filters.map((filter) => (
-          <FilterButton
-            key={filter}
-            filter={filter}
-            isSelected={selectedFilter === filter}
-            onClick={handleFilterClick}
-          />
-        ))}
+    return (
+      <div className="max-w-md mx-auto px-4 py-2">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          {filters.map((filter) => (
+            <FilterButton
+              key={filter}
+              filter={filter}
+              isSelected={selectedFilter === filter}
+              onClick={handleFilterClick}
+              disabled={loading}
+            />
+          ))}
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
-const FilterButton = memo(({ filter, isSelected, onClick }) => {
+const FilterButton = memo(({ filter, isSelected, onClick, disabled }) => {
   const handleClick = useCallback(() => {
-    onClick(filter);
-  }, [filter, onClick]);
+    if (!disabled) {
+      onClick(filter);
+    }
+  }, [filter, onClick, disabled]);
 
   const buttonClassName = useMemo(() => {
-    return `px-4 py-2 rounded-full text-sm font-medium transition-all flex-shrink-0 active:scale-95 ${
-      isSelected
-        ? "bg-blue-500 text-white shadow-lg"
-        : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-    }`;
-  }, [isSelected]);
+    const baseClasses =
+      "px-4 py-2 rounded-full text-sm font-medium transition-all flex-shrink-0";
+    const stateClasses = disabled
+      ? "opacity-50 cursor-not-allowed"
+      : "active:scale-95";
+    const styleClasses = isSelected
+      ? "bg-blue-500 text-white shadow-lg"
+      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600";
+
+    return `${baseClasses} ${stateClasses} ${styleClasses}`;
+  }, [isSelected, disabled]);
 
   const displayText = useMemo(() => {
+    if (filter === "all") return "All";
     return filter.charAt(0).toUpperCase() + filter.slice(1);
   }, [filter]);
 
   return (
-    <button onClick={handleClick} className={buttonClassName}>
+    <button
+      onClick={handleClick}
+      className={buttonClassName}
+      disabled={disabled}
+    >
       {displayText}
     </button>
   );
@@ -197,36 +212,69 @@ const HomePage = () => {
   const {
     publicPosts,
     fetchPublicPosts,
+    fetchPostsByCategories,
     hasMore,
-    loading,
+    loadingPosts: loading, // Use your existing loading state name
     resetPagination,
     deleteUploadedPost,
+    loadMorePosts, // Use the new helper method
+    getCurrentFilterState,
   } = usePostStore();
   const onlineUsers = useOnlineUserStore((state) => state.onlineUsers);
   const { fetchJoinedGroups } = useGroupStore();
 
-  // Memoized constants
-  const filters = useMemo(() => ["all", "tech", "art", "food", "travel"], []);
+  // Updated filters to match your categories
+  const filters = useMemo(
+    () => [
+      "all",
+      "college",
+      "krishna",
+      "msc",
+      "mca",
+      "farewell",
+      "trip",
+      "boyshostel",
+      "girlshostel",
+    ],
+    []
+  );
 
-  // Memoized filtered posts
+  // Memoized filtered posts (now only for search filtering)
   const filteredPosts = useMemo(() => {
     return publicPosts.filter((post) => {
-      const matchesFilter =
-        selectedFilter === "all" || post.category === selectedFilter;
       const matchesSearch =
         post.caption?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.username?.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesFilter && matchesSearch;
+        post.createdBy?.username
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase());
+      return matchesSearch;
     });
-  }, [publicPosts, selectedFilter, searchTerm]);
+  }, [publicPosts, searchTerm]);
 
   // Callbacks
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  }, []);
+    resetPagination();
+
+    try {
+      if (selectedFilter === "all") {
+        await fetchPublicPosts();
+      } else {
+        await fetchPostsByCategories([selectedFilter], true);
+      }
+    } catch (error) {
+      console.error("Error refreshing posts:", error);
+    } finally {
+      setTimeout(() => {
+        setRefreshing(false);
+      }, 1000);
+    }
+  }, [
+    selectedFilter,
+    fetchPublicPosts,
+    fetchPostsByCategories,
+    resetPagination,
+  ]);
 
   const handleDeletePost = useCallback(
     (postId) => {
@@ -258,21 +306,47 @@ const HomePage = () => {
     setSearchTerm(term);
   }, []);
 
+  // Load more posts based on current filter
+  const loadMorePostsHandler = useCallback(() => {
+    loadMorePosts();
+  }, [loadMorePosts]);
+
   // Effects
   useEffect(() => {
     const initializeData = async () => {
-      await Promise.all([fetchPublicPosts(), fetchJoinedGroups()]);
+      await fetchJoinedGroups();
+      // Initial load will be handled by the filter effect
     };
 
     initializeData();
-  }, [fetchPublicPosts, fetchJoinedGroups]);
+  }, [fetchJoinedGroups]);
+
+  // Effect to fetch posts when filter changes
+  useEffect(() => {
+    const fetchFilteredPosts = async () => {
+      resetPagination(); // Reset pagination when filter changes
+
+      if (selectedFilter === "all") {
+        await fetchPublicPosts();
+      } else {
+        await fetchPostsByCategories([selectedFilter], true); // true for reset
+      }
+    };
+
+    fetchFilteredPosts();
+  }, [
+    selectedFilter,
+    fetchPublicPosts,
+    fetchPostsByCategories,
+    resetPagination,
+  ]);
 
   // Intersection Observer effect
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading) {
-          fetchPublicPosts();
+          loadMorePosts();
         }
       },
       { threshold: 1.0 }
@@ -285,10 +359,10 @@ const HomePage = () => {
       if (currentRef) observer.unobserve(currentRef);
       observer.disconnect();
     };
-  }, [hasMore, loading, fetchPublicPosts]);
+  }, [hasMore, loading, loadMorePosts]);
 
-  // Early return for loading state
-  if (loading) {
+  // Early return for initial loading state
+  if (loading && publicPosts.length === 0) {
     return <LoadingScreen />;
   }
 
@@ -311,26 +385,77 @@ const HomePage = () => {
         filters={filters}
         selectedFilter={selectedFilter}
         setSelectedFilter={handleSetSelectedFilter}
+        loading={loading}
       />
+
+      {/* Loading indicator for filter changes */}
+      {loading && publicPosts.length === 0 && (
+        <div className="flex justify-center items-center py-8">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <span className="ml-3 text-gray-600 dark:text-gray-300">
+            Loading{" "}
+            {selectedFilter === "all" ? "all posts" : `${selectedFilter} posts`}
+            ...
+          </span>
+        </div>
+      )}
 
       {/* Posts Feed */}
       <div className="max-w-md mx-auto pb-20">
-        {filteredPosts.map((post, index) => (
-          <PostItem
-            key={post._id}
-            post={post}
-            index={index}
-            handleDeletePost={handleDeletePost}
-          />
-        ))}
+        {filteredPosts.length > 0
+          ? filteredPosts.map((post, index) => (
+              <PostItem
+                key={post._id}
+                post={post}
+                index={index}
+                handleDeletePost={handleDeletePost}
+              />
+            ))
+          : !loading && (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                  <Image className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  No posts found
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-4">
+                  {searchTerm
+                    ? `No posts match "${searchTerm}"`
+                    : selectedFilter === "all"
+                    ? "No posts available"
+                    : `No posts in ${selectedFilter} category`}
+                </p>
+                {!searchTerm && (
+                  <button
+                    onClick={handleShowCreatePost}
+                    className="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+                  >
+                    Create First Post
+                  </button>
+                )}
+              </div>
+            )}
 
         {/* Load More Observer */}
-        {hasMore && (
+        {hasMore && filteredPosts.length > 0 && (
           <div
             ref={observerRef}
             className="h-10 flex justify-center items-center"
           >
             <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+
+        {/* End of results indicator */}
+        {!hasMore && filteredPosts.length > 0 && (
+          <div className="text-center py-6">
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
+              You've reached the end of{" "}
+              {selectedFilter === "all"
+                ? "all posts"
+                : `${selectedFilter} posts`}
+            </p>
           </div>
         )}
       </div>

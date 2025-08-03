@@ -2,6 +2,7 @@ import { create } from "zustand";
 import api from "../utils/api";
 import toast from "react-hot-toast";
 import useLoaderStore from "../store/loaderStore";
+
 const usePostStore = create((set, get) => ({
   loadingPosts: false,
   publicPosts: [],
@@ -16,12 +17,18 @@ const usePostStore = create((set, get) => ({
   hasMoreGroupMap: {},
   singlePost: null,
 
+  // Add new state for category filtering
+  currentCategories: [], // Track current selected categories
+  isFilterActive: false, // Track if we're filtering by categories
+
   // Reset public pagination state
   resetPagination: () => {
     set({
       publicPosts: [],
-      currentPage: 1,
+      currentPage: 0, // Reset to 0 to match your existing logic
       hasMore: true,
+      currentCategories: [],
+      isFilterActive: false,
     });
   },
 
@@ -34,9 +41,16 @@ const usePostStore = create((set, get) => ({
     });
   },
 
-  // ✅ Fetch public posts with pagination
+  // ✅ Fetch public posts with pagination (your existing method)
   fetchPublicPosts: async () => {
-    const { currentPage, limit, publicPosts, hasMore, loadingPosts } = get();
+    const {
+      currentPage,
+      limit,
+      publicPosts,
+      hasMore,
+      loadingPosts,
+      isFilterActive,
+    } = get();
 
     if (!hasMore || loadingPosts) return;
 
@@ -53,11 +67,13 @@ const usePostStore = create((set, get) => ({
         `/posts/public?page=${nextPage}&limit=${limit}`
       );
       const newPosts = res.data;
-
       set({
         publicPosts: [...publicPosts, ...newPosts],
         hasMore: newPosts.length === limit,
         currentPage: nextPage,
+        // Reset category state when fetching all posts
+        currentCategories: [],
+        isFilterActive: false,
       });
     } catch (err) {
       console.error("Failed to fetch public posts:", err);
@@ -66,6 +82,58 @@ const usePostStore = create((set, get) => ({
     }
   },
 
+  // ✅ New method: Fetch posts by categories
+  fetchPostsByCategories: async (categories, resetPosts = false) => {
+    const { currentPage, limit, publicPosts, hasMore, loadingPosts } = get();
+
+    if (!hasMore || loadingPosts) return;
+
+    // If resetting or switching categories, start fresh
+    if (
+      resetPosts ||
+      JSON.stringify(get().currentCategories) !== JSON.stringify(categories)
+    ) {
+      set({
+        publicPosts: [],
+        currentPage: 0,
+        hasMore: true,
+        currentCategories: categories,
+        isFilterActive: true,
+      });
+    }
+
+    const { currentPage: updatedPage, publicPosts: updatedPosts } = get();
+    const alreadyFetchedPosts = updatedPosts.length;
+    const expectedPosts = (updatedPage + 1) * limit;
+
+    if (alreadyFetchedPosts >= expectedPosts && !resetPosts) return;
+
+    set({ loadingPosts: true });
+
+    try {
+      const nextPage = updatedPage + 1;
+      const categoriesParam = categories.join(",");
+      const res = await api.get(
+        `/posts/categories?categories=${categoriesParam}&page=${nextPage}&limit=${limit}`
+      );
+      const newPosts = res.data;
+
+      set({
+        publicPosts: resetPosts ? newPosts : [...updatedPosts, ...newPosts],
+        hasMore: newPosts.length === limit,
+        currentPage: nextPage,
+        currentCategories: categories,
+        isFilterActive: true,
+      });
+    } catch (err) {
+      console.error("Failed to fetch posts by categories:", err);
+      toast.error(`Failed to load ${categories.join(", ")} posts`);
+    } finally {
+      set({ loadingPosts: false });
+    }
+  },
+
+  // ✅ Your existing fetchGroupPosts method (unchanged)
   fetchGroupPosts: async (groupId) => {
     const { groupPostMap, groupPageMap, hasMoreGroupMap, limit, loadingPosts } =
       get();
@@ -108,6 +176,8 @@ const usePostStore = create((set, get) => ({
       set({ loadingPosts: false });
     }
   },
+
+  // ✅ Your existing reportPost method (unchanged)
   reportPost: async (postId) => {
     try {
       const res = await api.post(`/posts/${postId}/report`);
@@ -128,6 +198,7 @@ const usePostStore = create((set, get) => ({
     }
   },
 
+  // ✅ Updated uploadPost method to handle categories
   uploadPost: async (postData, isGroupPost) => {
     const { setUploading } = useLoaderStore.getState();
     setUploading(true);
@@ -136,6 +207,7 @@ const usePostStore = create((set, get) => ({
       const res = await api.post("/posts/upload", postData);
       const newPost = res.data;
       console.log(postData.groupId, isGroupPost);
+
       if (isGroupPost && postData.groupId) {
         console.log("updated");
         const { groupPostMap } = get();
@@ -150,6 +222,8 @@ const usePostStore = create((set, get) => ({
           },
         }));
       } else {
+        // Add to public posts regardless of current filter
+        // The user should see their new post immediately
         set((state) => ({
           publicPosts: [newPost, ...state.publicPosts],
         }));
@@ -164,11 +238,13 @@ const usePostStore = create((set, get) => ({
     }
   },
 
+  // ✅ Your existing toggleLikePost method (unchanged)
   toggleLikePost: async (postId) => {
+    console.log("not even callede");
     try {
       const res = await api.post(`/posts/${postId}/like`);
       const updatedPost = res.data.updatedPost;
-
+      console.log(updatedPost, "not data");
       const { publicPosts, groupPostMap } = get();
 
       // Update public posts
@@ -193,6 +269,7 @@ const usePostStore = create((set, get) => ({
     }
   },
 
+  // ✅ Your existing commentOnPost method (unchanged)
   commentOnPost: async (postId, comment) => {
     try {
       await api.post(`/posts/${postId}/comment`, { text: comment });
@@ -201,30 +278,49 @@ const usePostStore = create((set, get) => ({
     }
   },
 
+  // ✅ Updated deleteUploadedPost method to handle both public and group posts
   deleteUploadedPost: async (postId) => {
     console.log(postId);
-    let previousPosts;
+    let previousPublicPosts, previousPosts, previousGroupPostMap;
+
     set((state) => {
+      previousPublicPosts = state.publicPosts;
       previousPosts = state.posts;
+      previousGroupPostMap = state.groupPostMap;
+
+      // Remove from all possible locations
+      const updatedGroupPostMap = {};
+      for (const groupId in state.groupPostMap) {
+        updatedGroupPostMap[groupId] = state.groupPostMap[groupId].filter(
+          (post) => post._id !== postId
+        );
+      }
+
       return {
+        publicPosts: state.publicPosts.filter((post) => post._id !== postId),
         posts: state.posts.filter((post) => post._id !== postId),
+        groupPostMap: updatedGroupPostMap,
       };
     });
 
     try {
       const res = await api.delete(`/posts/${postId}`);
       if (res.data.success || res.status == 200) {
-        toast.success("Post deleted sucessfully");
+        toast.success("Post deleted successfully");
       }
     } catch (err) {
       console.error("Delete failed, restoring post", err);
       // Rollback
-      set({ posts: previousPosts });
-
+      set({
+        publicPosts: previousPublicPosts,
+        posts: previousPosts,
+        groupPostMap: previousGroupPostMap,
+      });
       toast.error("Failed to delete post. Please try again.");
     }
   },
-  // Get user's uploaded posts
+
+  // ✅ Your existing fetchUploadedPosts method (unchanged)
   fetchUploadedPosts: async () => {
     try {
       const res = await api.get("/posts/my-uploads");
@@ -234,7 +330,7 @@ const usePostStore = create((set, get) => ({
     }
   },
 
-  // Get posts user is tagged in
+  // ✅ Your existing fetchTaggedPosts method (unchanged)
   fetchTaggedPosts: async () => {
     try {
       const res = await api.get("/posts/tagged");
@@ -244,6 +340,7 @@ const usePostStore = create((set, get) => ({
     }
   },
 
+  // ✅ Your existing fetchSinglePost method (unchanged)
   fetchSinglePost: async (postId) => {
     console.log("calling");
     set({ loadingPosts: true });
@@ -254,6 +351,23 @@ const usePostStore = create((set, get) => ({
       console.error("fetching the tagged post failed", err);
     } finally {
       set({ loadingPosts: false });
+    }
+  },
+
+  // ✅ Helper method to check current filter state
+  getCurrentFilterState: () => {
+    const { isFilterActive, currentCategories } = get();
+    return { isFilterActive, currentCategories };
+  },
+
+  // ✅ Method to load more posts based on current state
+  loadMorePosts: async () => {
+    const { isFilterActive, currentCategories } = get();
+
+    if (isFilterActive && currentCategories.length > 0) {
+      await get().fetchPostsByCategories(currentCategories, false);
+    } else {
+      await get().fetchPublicPosts();
     }
   },
 }));

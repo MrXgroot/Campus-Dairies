@@ -41,11 +41,11 @@ const Navbar = ({ onCreatePostClick }) => {
 
         {/* Create Post */}
         <button
-          onClick={onCreatePostClick}
+          onClick={() => navigate("/messagewall")}
           className="flex flex-col items-center text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
         >
           <Plus className="w-6 h-6" />
-          <span className="text-[10px] mt-0.5">Post</span>
+          <span className="text-[10px] mt-0.5">message</span>
         </button>
 
         {/* Notifications */}

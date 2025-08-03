@@ -29,6 +29,8 @@ const PostModal = ({ show, onClose, id = null }) => {
   const location = useLocation();
   const [mediaType, setMediaType] = useState("image"); // or "video"
   const [rawFile, setRawFile] = useState(null);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+
   const groupId = location.pathname == "/" ? "public" : id;
   const uploadPost = usePostStore((state) => state.uploadPost);
   const setUploading = useLoaderStore((state) => state.setUploading);
@@ -77,6 +79,9 @@ const PostModal = ({ show, onClose, id = null }) => {
         groupId,
         taggedUsers: JSON.stringify(taggedUsers.map((u) => u._id)),
         filename: result.original_filename,
+        categories: JSON.stringify(
+          selectedCategories.length > 0 ? selectedCategories : ["college"]
+        ), // Add categories
       };
 
       // 4. Send to backend using axios
@@ -223,6 +228,8 @@ const PostModal = ({ show, onClose, id = null }) => {
             removeTag={removeTag}
             caption={caption}
             user={user}
+            setSelectedCategories={setSelectedCategories}
+            selectedCategories={selectedCategories}
           />
         )}
 

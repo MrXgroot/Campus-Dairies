@@ -1,11 +1,13 @@
 const Comment = require("../models/Comment");
 const Post = require("../models/Post");
 const Notification = require("../models/Notification");
+
 // Create a new comment on a post
 const createComment = async (req, res) => {
   const { text } = req.body;
   const { postId } = req.params;
   const userId = req.user.id;
+
   if (!text) return res.status(400).json({ error: "Comment text is required" });
 
   try {
@@ -18,11 +20,16 @@ const createComment = async (req, res) => {
       user: userId,
       text,
     });
+
+    // Update post with new comment and increment comment count
     await Post.findByIdAndUpdate(postId, {
       $push: { comments: newComment._id },
+      $inc: { commentCount: 1 }, // Increment comment count by 1
     });
+
     newComment = await newComment.populate("user", "name avatar isVerified");
 
+    // Create notification if commenter is not the post owner
     if (userId !== post.createdBy._id.toString()) {
       await Notification.create({
         sender: userId,
@@ -32,6 +39,7 @@ const createComment = async (req, res) => {
         post: postId,
         commentId: newComment._id,
       });
+
       const io = req.app.get("io");
       io.to(post.createdBy._id.toString()).emit("new-notification", {
         message: "new Comment on your post",
@@ -78,6 +86,12 @@ const deleteComment = async (req, res) => {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
+    // Remove comment from post and decrement comment count
+    await Post.findByIdAndUpdate(comment.postId, {
+      $pull: { comments: commentId },
+      $inc: { commentCount: -1 }, // Decrement comment count by 1
+    });
+
     await comment.deleteOne();
     res.status(200).json({ message: "Comment deleted" });
   } catch (err) {
@@ -106,6 +120,12 @@ const addReply = async (req, res) => {
 
     comment.replies.push(reply);
     await comment.save();
+
+    // Optionally increment comment count for replies as well
+    // If you want replies to count towards the total comment count:
+    await Post.findByIdAndUpdate(comment.postId, {
+      $inc: { commentCount: 1 },
+    });
 
     // get the last reply from comment.replies array
     const lastReply = comment.replies[comment.replies.length - 1];
@@ -143,6 +163,12 @@ const deleteReply = async (req, res) => {
 
     reply.deleteOne();
     await comment.save();
+
+    // Optionally decrement comment count for reply deletion
+    // If you want replies to count towards the total comment count:
+    await Post.findByIdAndUpdate(comment.postId, {
+      $inc: { commentCount: -1 },
+    });
 
     res.status(200).json({ message: "Reply deleted" });
   } catch (err) {

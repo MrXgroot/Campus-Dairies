@@ -5,7 +5,22 @@ const postSchema = new Schema(
   {
     // Text content
     caption: { type: String },
-    category: { type: String }, // Optional (tech, farewell, etc.)
+    categories: [
+      {
+        type: String,
+        enum: [
+          "college",
+          "krishna",
+          "msc",
+          "mca",
+          "farewell",
+          "trip",
+          "boyshostel",
+          "girlshostel",
+        ],
+        default: ["college"],
+      },
+    ], // Optional (tech, farewell, etc.)
 
     // Media
     mediaUrl: { type: String, required: true }, // Either image or video URL
@@ -46,6 +61,7 @@ const postSchema = new Schema(
 
     // Comments reference
     comments: [{ type: Schema.Types.ObjectId, ref: "Comment" }],
+    commentCount: { type: Number, default: 0 },
   },
 
   { timestamps: true }

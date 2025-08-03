@@ -47,7 +47,7 @@ const PostCard = memo(({ post, canDelete, handleDeletePost }) => {
   const optionsRef = useRef(null);
 
   // Store hooks
-  const reactToPost = usePostStore((state) => state.toggleLikePost);
+  const toggleLikePost = usePostStore((state) => state.toggleLikePost);
   const openCommentModal = useModalStore((state) => state.openCommentModal);
   const user = useAuthStore((state) => state.user);
   const { sendWaveToUser } = useUserStore();
@@ -58,27 +58,17 @@ const PostCard = memo(({ post, canDelete, handleDeletePost }) => {
     [post.createdAt]
   );
 
-  const [likesCount, setLikesCount] = useState(post.likes.length);
+  const [likesCount, setLikesCount] = useState(post.likesCount);
 
-  const commentsCount = useMemo(
-    () => post.comments.length,
-    [post.comments.length]
-  );
-
-  const hasTaggedUsers = useMemo(
-    () => post.taggedUsers.length > 0,
-    [post.taggedUsers.length]
-  );
-
-  const canDeletePost = useMemo(
-    () => canDelete || user?.isVerified,
-    [canDelete, user?.isVerified]
-  );
+  const commentsCount = post.commentCount;
+  const latestComment = post.latestComment;
+  const hasTaggedUsers = post.taggedUsers.length > 0;
+  const canDeletePost = canDelete || user?.isVerified;
 
   // Callbacks
   const handleLike = useCallback(() => {
     setLiked((prev) => !prev);
-
+    toggleLikePost(post._id);
     if (!liked) {
       setLikesCount((prev) => prev + 1);
       setShowHeartAnimation(true);
@@ -371,32 +361,72 @@ const PostCard = memo(({ post, canDelete, handleDeletePost }) => {
         </div>
 
         {/* Caption */}
-        <div className="text-gray-900 dark:text-white">
+        <div className="text-gray-900 dark:text-white mb-2">
           <span className="font-semibold">{post.createdBy.username}</span>
           <span className="ml-2">{post.caption}</span>
         </div>
 
-        {hasTaggedUsers &&
-          post.taggedUsers.map((taggedUser) => (
-            <div
-              key={taggedUser._id}
-              className="text-gray-900 dark:text-white mt-2"
-            >
-              <span className="font-semibold text-blue-400">
+        {/* Tagged Users */}
+        {hasTaggedUsers && (
+          <div className="mb-2">
+            {post.taggedUsers.map((taggedUser) => (
+              <span
+                key={taggedUser._id}
+                className="inline-block text-blue-500 dark:text-blue-400 font-medium mr-2"
+              >
                 @{taggedUser.username}
               </span>
-            </div>
-          ))}
+            ))}
+          </div>
+        )}
 
-        {/* Comments */}
-        {commentsCount > 0 && (
+        {/* Latest Comment - Enhanced Design */}
+        {latestComment && (
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 mb-2 border-l-4 border-blue-400">
+            <div className="flex items-start gap-2">
+              <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                <img
+                  src={latestComment.commentedBy.avatar}
+                  alt={latestComment.commentedBy.username}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1 mb-1">
+                  <span className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                    {latestComment.commentedBy.username}
+                  </span>
+                  {latestComment.commentedBy.isVerified && (
+                    <VerifiedBadge size="sm" />
+                  )}
+                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto flex-shrink-0">
+                    {moment(latestComment.createdAt).fromNow()}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {latestComment.text}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Comments Footer */}
+        <div className="flex items-center justify-between text-sm">
           <button
             onClick={handleOpenComments}
-            className="text-sm text-gray-500 dark:text-gray-400 mt-2 hover:text-gray-700 dark:hover:text-gray-200"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors font-medium"
           >
-            {`View all ${commentsCount} comments`}
+            {commentsCount > 0
+              ? commentsCount === 1
+                ? "View 1 comment"
+                : `View all ${commentsCount} comments`
+              : "Be the first to comment"}
           </button>
-        )}
+          <span className="text-gray-400 dark:text-gray-500 text-xs">
+            {timeAgo}
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
-import React from "react";
-import { ArrowLeft, X } from "lucide-react";
+import React, { useState } from "react";
+import { ArrowLeft, X, Tag } from "lucide-react";
 
 const EditPage = ({
   mediaType,
@@ -10,7 +10,36 @@ const EditPage = ({
   removeTag,
   caption,
   user,
+  selectedCategories,
+  setSelectedCategories,
 }) => {
+  const [showCategoriesDropdown, setShowCategoriesDropdown] = useState(false);
+
+  const availableCategories = [
+    "college",
+    "krishna",
+    "msc",
+    "mca",
+    "farewell",
+    "trip",
+    "boyshostel",
+    "girlshostel",
+  ];
+
+  const handleCategoryToggle = (category) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(category)) {
+        return prev.filter((c) => c !== category);
+      } else {
+        return [...prev, category];
+      }
+    });
+  };
+
+  const removeCategory = (category) => {
+    setSelectedCategories((prev) => prev.filter((c) => c !== category));
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Image Preview */}
@@ -36,7 +65,7 @@ const EditPage = ({
       </div>
 
       {/* Caption and Options */}
-      <div className="bg-white dark:bg-gray-900 p-4 space-y-4 max-h-80 overflow-y-auto sticky bottom-0 w-full ">
+      <div className="bg-white dark:bg-gray-900 p-4 space-y-4 max-h-80 overflow-y-auto sticky bottom-0 w-full">
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
             <img
@@ -53,6 +82,74 @@ const EditPage = ({
             rows={3}
           />
         </div>
+
+        {/* Categories Section */}
+        <div className="relative">
+          <button
+            onClick={() => setShowCategoriesDropdown(!showCategoriesDropdown)}
+            className="flex items-center justify-between w-full py-3 text-left border-t border-gray-200 dark:border-gray-700"
+          >
+            <span className="text-gray-900 dark:text-white text-sm flex items-center gap-2">
+              <Tag className="w-4 h-4" />
+              Add categories
+            </span>
+            <div className="flex items-center gap-2">
+              {selectedCategories.length > 0 && (
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {selectedCategories.length} selected
+                </span>
+              )}
+              <ArrowLeft
+                className={`w-4 h-4 text-gray-400 transition-transform ${
+                  showCategoriesDropdown ? "rotate-90" : "rotate-180"
+                }`}
+              />
+            </div>
+          </button>
+
+          {/* Categories Dropdown */}
+          {showCategoriesDropdown && (
+            <div className="mt-2 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+              <div className="grid grid-cols-2 gap-2">
+                {availableCategories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => handleCategoryToggle(category)}
+                    className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
+                      selectedCategories.includes(category)
+                        ? "bg-blue-500 text-white"
+                        : "bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Selected Categories Display */}
+        {selectedCategories.length > 0 && (
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+            <div className="flex flex-wrap gap-2">
+              {selectedCategories.map((category) => (
+                <div
+                  key={category}
+                  className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full text-sm"
+                >
+                  <span>{category}</span>
+                  <button
+                    onClick={() => removeCategory(category)}
+                    className="text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100 ml-1"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Tag People */}
         <button

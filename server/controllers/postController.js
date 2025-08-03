@@ -6,6 +6,44 @@ const cloudinary = require("../config/cloudinary");
 const mongoose = require("mongoose");
 const Notification = require("../models/Notification");
 const { createNotification } = require("../controllers/notificationController");
+
+// Helper function to enrich posts with consistent format
+const enrichPost = (post, userId) => {
+  const latestComment = post.comments?.[0];
+
+  return {
+    _id: post._id,
+    caption: post.caption,
+    mediaUrl: post.mediaUrl,
+    cloudinaryPublicId: post.cloudinaryPublicId,
+    type: post.type,
+    mood: post.mood,
+    categories: post.categories || [],
+    category: post.category, // Keep for backward compatibility
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+    createdBy: post.createdBy,
+    taggedUsers: post.taggedUsers,
+    groupId: post.groupId,
+
+    likesCount: post.likes?.length || 0,
+    isLiked: post.likes?.some((id) => id.toString() === userId),
+
+    commentCount: post.commentCount || 0,
+
+    // Reports
+    isReported: post.reports?.some((id) => id.toString() === userId),
+
+    latestComment: latestComment
+      ? {
+          text: latestComment.text,
+          createdAt: latestComment.createdAt,
+          commentedBy: latestComment.user,
+        }
+      : null,
+  };
+};
+
 exports.getMyPosts = async (req, res) => {
   const user = req.user;
   const userId = req.user.id;
@@ -15,15 +53,19 @@ exports.getMyPosts = async (req, res) => {
   try {
     const posts = await Post.find({ createdBy: req.user.id })
       .sort({ createdAt: -1 })
-      .populate("createdBy", "username avatar")
-      .populate("taggedUsers", "username")
+      .populate("createdBy", "username avatar isVerified")
+      .populate("taggedUsers", "username avatar")
+      .populate({
+        path: "comments",
+        options: { sort: { createdAt: -1 }, limit: 1 },
+        populate: {
+          path: "user",
+          select: "username avatar",
+        },
+      })
       .lean();
-    const enrichedPosts = posts.map((post) => ({
-      ...post,
-      isLiked: post.likes.some((id) => id.toString() === userId),
-      isReported: post.reports?.some((id) => id.toString() === userId),
-    }));
 
+    const enrichedPosts = posts.map((post) => enrichPost(post, userId));
     res.status(200).json(enrichedPosts);
   } catch (err) {
     console.error("Fetch my uploads failed:", err);
@@ -36,17 +78,20 @@ exports.getTaggedPosts = async (req, res) => {
 
   try {
     const posts = await Post.find({ taggedUsers: userId })
-      .populate("createdBy", "name username avatar")
-      .populate("taggedUsers", "username")
+      .populate("createdBy", "name username avatar isVerified")
+      .populate("taggedUsers", "username avatar")
+      .populate({
+        path: "comments",
+        options: { sort: { createdAt: -1 }, limit: 1 },
+        populate: {
+          path: "user",
+          select: "username avatar",
+        },
+      })
       .sort({ createdAt: -1 })
       .lean();
 
-    const enrichedPosts = posts.map((post) => ({
-      ...post,
-      isLiked: post.likes.some((id) => id.toString() === userId),
-      isReported: post.reports?.some((id) => id.toString() === userId),
-    }));
-
+    const enrichedPosts = posts.map((post) => enrichPost(post, userId));
     res.status(200).json(enrichedPosts);
   } catch (err) {
     console.error("Fetch tagged posts failed:", err);
@@ -57,7 +102,6 @@ exports.getTaggedPosts = async (req, res) => {
 // @desc    Upload a photo or video post
 // @route   POST /api/posts/upload
 // @access  Private
-
 exports.uploadPost = async (req, res) => {
   const {
     caption,
@@ -67,6 +111,7 @@ exports.uploadPost = async (req, res) => {
     cloudinaryPublicId,
     type,
     taggedUsers: taggedUsersRaw,
+    categories: categoriesRaw,
   } = req.body;
   const userId = req.user.id;
 
@@ -77,7 +122,6 @@ exports.uploadPost = async (req, res) => {
   try {
     if (!groupId) {
       await cloudinary.uploader.destroy(cloudinaryPublicId);
-
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -91,7 +135,6 @@ exports.uploadPost = async (req, res) => {
           );
         } else {
           await cloudinary.uploader.destroy(cloudinaryPublicId);
-
           return res
             .status(400)
             .json({ error: "taggedUsers must be an array" });
@@ -100,6 +143,41 @@ exports.uploadPost = async (req, res) => {
         await cloudinary.uploader.destroy(cloudinaryPublicId);
         return res.status(400).json({ error: "Invalid taggedUsers format" });
       }
+    }
+
+    // Handle categories
+    let categories = [];
+    if (categoriesRaw) {
+      try {
+        const parsed =
+          typeof categoriesRaw === "string"
+            ? JSON.parse(categoriesRaw)
+            : categoriesRaw;
+        if (Array.isArray(parsed)) {
+          const validCategories = [
+            "college",
+            "krishna",
+            "msc",
+            "mca",
+            "farewell",
+            "trip",
+            "boyshostel",
+            "girlshostel",
+          ];
+          categories = parsed.filter((cat) => validCategories.includes(cat));
+        } else {
+          await cloudinary.uploader.destroy(cloudinaryPublicId);
+          return res.status(400).json({ error: "categories must be an array" });
+        }
+      } catch (err) {
+        await cloudinary.uploader.destroy(cloudinaryPublicId);
+        return res.status(400).json({ error: "Invalid categories format" });
+      }
+    }
+
+    // Default to "college" if no categories provided
+    if (categories.length === 0) {
+      categories = ["college"];
     }
 
     if (groupId !== "public") {
@@ -126,11 +204,20 @@ exports.uploadPost = async (req, res) => {
       createdBy: userId,
       groupId,
       taggedUsers,
+      categories,
     });
 
     const populatedPost = await Post.findById(newPost._id)
       .populate("createdBy", "username avatar isVerified")
       .populate("taggedUsers", "username avatar")
+      .populate({
+        path: "comments",
+        options: { sort: { createdAt: -1 }, limit: 1 },
+        populate: {
+          path: "user",
+          select: "username avatar",
+        },
+      })
       .lean();
 
     // Create notifications
@@ -149,29 +236,12 @@ exports.uploadPost = async (req, res) => {
       );
     }
 
-    const enrichedPost = {
-      ...populatedPost,
-      isHearted: populatedPost.reactions?.hearts?.some(
-        (id) => id.toString() === userId
-      ),
-      isWaved: populatedPost.reactions?.waves?.some(
-        (id) => id.toString() === userId
-      ),
-      isLaughed: populatedPost.reactions?.laughs?.some(
-        (id) => id.toString() === userId
-      ),
-      isReported: populatedPost.reports?.some((id) => id.toString() === userId),
-      totalHearts: populatedPost.reactions?.hearts?.length || 0,
-      totalWaves: populatedPost.reactions?.waves?.length || 0,
-      totalLaughs: populatedPost.reactions?.laughs?.length || 0,
-      totalReports: populatedPost.reports?.length || 0,
-    };
-
+    const enrichedPost = enrichPost(populatedPost, userId);
     res.status(201).json(enrichedPost);
   } catch (err) {
     console.error("Upload post failed:", err);
 
-    // ✅ Cleanup on error
+    // Cleanup on error
     if (cloudinaryPublicId) {
       await cloudinary.uploader.destroy(cloudinaryPublicId);
     }
@@ -193,7 +263,7 @@ exports.generateSignature = async (req, res) => {
 
   const paramsToSign = {
     timestamp,
-    folder, // Optional folder to organize uploads
+    folder,
   };
 
   const signature = cloudinary.utils.api_sign_request(
@@ -217,24 +287,30 @@ exports.getPublicPosts = async (req, res) => {
   const skip = (page - 1) * limit;
 
   try {
-    const posts = await Post.find({ groupId: "public" })
+    const posts = await Post.find({
+      groupId: "public",
+      $or: [
+        { reports: { $exists: false } },
+        { reports: { $size: 0 } },
+        { $expr: { $lte: [{ $size: "$reports" }, 4] } },
+      ],
+    })
       .populate("createdBy", "username avatar isVerified")
       .populate("taggedUsers", "username avatar")
+      .populate({
+        path: "comments",
+        options: { sort: { createdAt: -1 }, limit: 1 },
+        populate: {
+          path: "user",
+          select: "username avatar",
+        },
+      })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
-    const filteredPosts = posts.filter(
-      (post) => !post.reports || post.reports.length <= 4
-    );
-
-    const enrichedPosts = filteredPosts.map((post) => ({
-      ...post,
-      isLiked: post.likes.some((id) => id.toString() === userId),
-      isReported: post.reports?.some((id) => id.toString() === userId),
-    }));
-
+    const enrichedPosts = posts.map((post) => enrichPost(post, userId));
     res.status(200).json(enrichedPosts);
   } catch (err) {
     console.error("Error fetching public posts:", err);
@@ -248,8 +324,17 @@ exports.toggleLikePost = async (req, res) => {
 
   try {
     const post = await Post.findById(postId)
-      .populate("createdBy", "username avatar ")
-      .populate("taggedUsers", "username");
+      .populate("createdBy", "username avatar isVerified")
+      .populate("taggedUsers", "username avatar")
+      .populate({
+        path: "comments",
+        options: { sort: { createdAt: -1 }, limit: 1 },
+        populate: {
+          path: "user",
+          select: "username avatar",
+        },
+      });
+
     if (!post) return res.status(404).json({ error: "Post not found" });
 
     const alreadyLiked = post.likes.includes(userId);
@@ -262,12 +347,12 @@ exports.toggleLikePost = async (req, res) => {
 
     await post.save();
     const plainPost = post.toObject();
-    plainPost.isLiked = !alreadyLiked;
+    const enrichedPost = enrichPost(plainPost, userId);
 
     res.status(200).json({
       message: "Like status updated",
       liked: !alreadyLiked,
-      updatedPost: plainPost,
+      updatedPost: enrichedPost,
     });
   } catch (err) {
     console.error("Like toggle error:", err);
@@ -276,12 +361,12 @@ exports.toggleLikePost = async (req, res) => {
 };
 
 exports.getGroupPosts = async (req, res) => {
-  // console.log("called");
   const groupId = req.params.id;
   const userId = req.user.id;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 12;
   const skip = (page - 1) * limit;
+
   try {
     const group = await Group.findById(groupId);
 
@@ -306,14 +391,17 @@ exports.getGroupPosts = async (req, res) => {
       .limit(limit)
       .populate("createdBy", "username avatar isVerified")
       .populate("taggedUsers", "username avatar")
+      .populate({
+        path: "comments",
+        options: { sort: { createdAt: -1 }, limit: 1 },
+        populate: {
+          path: "user",
+          select: "username avatar",
+        },
+      })
       .lean();
 
-    const enrichedPosts = posts.map((post) => ({
-      ...post,
-      isLiked: post.likes.some((id) => id.toString() === userId),
-      isReported: post.reports?.some((id) => id.toString() === userId),
-    }));
-
+    const enrichedPosts = posts.map((post) => enrichPost(post, userId));
     res.status(200).json(enrichedPosts);
   } catch (err) {
     console.error("Error fetching group posts:", err);
@@ -326,12 +414,22 @@ exports.reportPost = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId)
+      .populate("createdBy", "username avatar isVerified")
+      .populate("taggedUsers", "username avatar")
+      .populate({
+        path: "comments",
+        options: { sort: { createdAt: -1 }, limit: 1 },
+        populate: {
+          path: "user",
+          select: "username avatar",
+        },
+      });
+
     if (!post) return res.status(404).json({ error: "Post not found" });
 
     const alreadyReported = post.reports.includes(userId);
     if (alreadyReported) {
-      // Toggle off if already reported (optional)
       post.reports = post.reports.filter(
         (id) => id.toString() !== userId.toString()
       );
@@ -340,9 +438,14 @@ exports.reportPost = async (req, res) => {
     }
 
     await post.save();
-    res
-      .status(200)
-      .json({ message: "Post report updated", reported: !alreadyReported });
+    const plainPost = post.toObject();
+    const enrichedPost = enrichPost(plainPost, userId);
+
+    res.status(200).json({
+      message: "Post report updated",
+      reported: !alreadyReported,
+      post: enrichedPost,
+    });
   } catch (err) {
     console.error("Report post error:", err);
     res.status(500).json({ error: "Server error" });
@@ -353,7 +456,7 @@ exports.deletePost = async (req, res) => {
   const postId = req.params.id;
   const userId = req.user.id;
   const isAdmin = req.user.isAdmin;
-  console.log(isAdmin);
+
   try {
     const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ error: "Post not found" });
@@ -361,13 +464,16 @@ exports.deletePost = async (req, res) => {
     if (post.createdBy.toString() !== userId && !isAdmin) {
       return res.status(403).json({ error: "Unauthorized" });
     }
+
     if (post.cloudinaryPublicId) {
       await cloudinary.uploader.destroy(post.cloudinaryPublicId, {
         resource_type: post.type === "video" ? "video" : "image",
       });
     }
+
     await Comment.deleteMany({ _id: { $in: post.comments } });
     await Post.findByIdAndDelete(postId);
+
     res
       .status(200)
       .json({ success: true, message: "Post deleted successfully" });
@@ -380,6 +486,7 @@ exports.deletePost = async (req, res) => {
 exports.getSinglePost = async (req, res) => {
   const postId = req.params.id;
   const userId = req.user.id;
+
   try {
     const post = await Post.findById(postId)
       .populate("createdBy", "username avatar isVerified")
@@ -387,11 +494,71 @@ exports.getSinglePost = async (req, res) => {
       .populate({
         path: "comments",
         populate: { path: "user", select: "username avatar" },
+        options: { sort: { createdAt: -1 } },
       })
       .lean();
-    res.status(201).json(post);
+
+    if (!post) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    // For single post, we might want all comments, not just the latest
+    const enrichedPost = {
+      ...enrichPost(post, userId),
+      comments: post.comments, // Include all comments for single post view
+    };
+
+    res.status(200).json(enrichedPost);
   } catch (err) {
-    console.error("could not fetch single post", err);
+    console.error("Could not fetch single post", err);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Get posts by categories
+exports.getPostsByCategories = async (req, res) => {
+  const userId = req.user.id;
+  const { categories } = req.query;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 12;
+  const skip = (page - 1) * limit;
+
+  try {
+    let query = {
+      groupId: "public",
+      $or: [
+        { reports: { $exists: false } },
+        { reports: { $size: 0 } },
+        { $expr: { $lte: [{ $size: "$reports" }, 4] } },
+      ],
+    };
+
+    // Add category filter if provided
+    if (categories) {
+      const categoryArray = categories.split(",").map((cat) => cat.trim());
+      query.categories = { $in: categoryArray };
+    }
+
+    const posts = await Post.find(query)
+      .populate("createdBy", "username avatar isVerified")
+      .populate("taggedUsers", "username avatar")
+      .populate({
+        path: "comments",
+        options: { sort: { createdAt: -1 }, limit: 1 },
+        populate: {
+          path: "user",
+          select: "username avatar",
+        },
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const enrichedPosts = posts.map((post) => enrichPost(post, userId));
+    res.status(200).json(enrichedPosts);
+  } catch (err) {
+    console.error("Error fetching posts by categories:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };

@@ -14,6 +14,7 @@ const groupRoutes = require("./routes/groupRoutes");
 const userRoutes = require("./routes/userRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const commentRoutes = require("./routes/commentRoutes");
+const messageWallRoutes = require("./routes/messageWallRoutes");
 const app = express();
 const server = http.createServer(app); // ✅ Create custom HTTP server
 const initSocketServer = require("./socket");
@@ -54,6 +55,7 @@ app.use("/api/groups", groupRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/comments", commentRoutes);
+app.use("/api/messageWall", messageWallRoutes);
 const PORT = process.env.PORT || 3000;
 connectDb()
   .then(() => {
@@ -64,11 +66,3 @@ connectDb()
   .catch((err) => {
     console.error("❌ Failed to connect to DB", err);
   });
-
-const Post = require("./models/Notification");
-const deletepost = async () => {
-  const deleted = await Post.deleteMany();
-  console.log(deleted);
-};
-
-// deletepost();
