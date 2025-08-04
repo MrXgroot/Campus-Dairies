@@ -33,7 +33,7 @@ import {
 import useOnlineUserStore from "../store/onlineUserStore";
 import useGroupStore from "../store/groupStore";
 
-// Memoized components
+// Memoized components (unchanged)
 const StoriesSection = memo(({ stories, onClick }) => {
   const handleStoryClick = useCallback(
     (storyId) => {
@@ -211,14 +211,13 @@ const HomePage = () => {
   const { sendWaveToUser } = useUserStore();
   const {
     publicPosts,
-    fetchPublicPosts,
-    fetchPostsByCategories,
+    switchToCategory,
     hasMore,
-    loadingPosts: loading, // Use your existing loading state name
-    resetPagination,
+    loadingPosts: loading,
     deleteUploadedPost,
-    loadMorePosts, // Use the new helper method
+    loadMorePosts,
     getCurrentFilterState,
+    refreshCurrentCategory,
   } = usePostStore();
   const onlineUsers = useOnlineUserStore((state) => state.onlineUsers);
   const { fetchJoinedGroups } = useGroupStore();
@@ -254,14 +253,9 @@ const HomePage = () => {
   // Callbacks
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    resetPagination();
 
     try {
-      if (selectedFilter === "all") {
-        await fetchPublicPosts();
-      } else {
-        await fetchPostsByCategories([selectedFilter], true);
-      }
+      await refreshCurrentCategory();
     } catch (error) {
       console.error("Error refreshing posts:", error);
     } finally {
@@ -269,12 +263,7 @@ const HomePage = () => {
         setRefreshing(false);
       }, 1000);
     }
-  }, [
-    selectedFilter,
-    fetchPublicPosts,
-    fetchPostsByCategories,
-    resetPagination,
-  ]);
+  }, [refreshCurrentCategory]);
 
   const handleDeletePost = useCallback(
     (postId) => {
@@ -298,9 +287,15 @@ const HomePage = () => {
     setShowCreatePost(false);
   }, []);
 
-  const handleSetSelectedFilter = useCallback((filter) => {
-    setSelectedFilter(filter);
-  }, []);
+  const handleSetSelectedFilter = useCallback(
+    (filter) => {
+      setSelectedFilter(filter);
+      // Switch to the selected category using the new method
+      const categories = filter === "all" ? [] : [filter];
+      switchToCategory(categories);
+    },
+    [switchToCategory]
+  );
 
   const handleSetSearchTerm = useCallback((term) => {
     setSearchTerm(term);
@@ -315,31 +310,12 @@ const HomePage = () => {
   useEffect(() => {
     const initializeData = async () => {
       await fetchJoinedGroups();
-      // Initial load will be handled by the filter effect
+      // Load initial data for "all" category
+      await switchToCategory([]);
     };
 
     initializeData();
-  }, [fetchJoinedGroups]);
-
-  // Effect to fetch posts when filter changes
-  useEffect(() => {
-    const fetchFilteredPosts = async () => {
-      resetPagination(); // Reset pagination when filter changes
-
-      if (selectedFilter === "all") {
-        await fetchPublicPosts();
-      } else {
-        await fetchPostsByCategories([selectedFilter], true); // true for reset
-      }
-    };
-
-    fetchFilteredPosts();
-  }, [
-    selectedFilter,
-    fetchPublicPosts,
-    fetchPostsByCategories,
-    resetPagination,
-  ]);
+  }, [fetchJoinedGroups, switchToCategory]);
 
   // Intersection Observer effect
   useEffect(() => {

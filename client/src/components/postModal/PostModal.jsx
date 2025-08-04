@@ -33,7 +33,8 @@ const PostModal = ({ show, onClose, id = null }) => {
 
   const groupId = location.pathname == "/" ? "public" : id;
   const uploadPost = usePostStore((state) => state.uploadPost);
-  const setUploading = useLoaderStore((state) => state.setUploading);
+  const { setUploading, setUploadProgress } = useLoaderStore();
+
   const MAX_VIDEO_SIZE_MB = 50;
   const { fetchTaggableUsers, people, loadingPeople } = useUserStore();
   const { user } = useAuthStore();
@@ -44,17 +45,20 @@ const PostModal = ({ show, onClose, id = null }) => {
     }
 
     try {
+      setUploading(true, 0, "Getting upload signature...");
       const sigRes = await api.get(
         `/posts/generate-signature?groupId=${groupId}`
       );
       const { signature, timestamp, apiKey, cloudName, folder } = sigRes.data;
-
+      setUploadProgress(10, "Preparing upload...");
       const cloudForm = new FormData();
       cloudForm.append("file", compressedFile);
       cloudForm.append("api_key", apiKey);
       cloudForm.append("timestamp", timestamp);
       cloudForm.append("signature", signature);
       cloudForm.append("folder", folder);
+
+      setUploadProgress(20, "Uploading to cloud...");
 
       const cloudinaryUpload = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
@@ -63,12 +67,14 @@ const PostModal = ({ show, onClose, id = null }) => {
           body: cloudForm,
         }
       );
-
+      setUploadProgress(70, "Processing upload...");
       const result = await cloudinaryUpload.json();
 
       if (!result.secure_url) {
         throw new Error("Cloudinary upload Failed");
       }
+
+      setUploadProgress(80, "Saving post data...");
 
       const postData = {
         mediaUrl: result.secure_url,
@@ -84,8 +90,16 @@ const PostModal = ({ show, onClose, id = null }) => {
         ), // Add categories
       };
 
+      setUploadProgress(90, "Finalizing post...");
+
       // 4. Send to backend using axios
       uploadPost(postData, groupId !== "public");
+      setUploadProgress(100, "Post created successfully!");
+
+      // Clean up after a short delay
+      setTimeout(() => {
+        setUploading(false);
+      }, 1000);
     } catch (err) {
       console.error("Upload failed:", err);
       setUploading(false);

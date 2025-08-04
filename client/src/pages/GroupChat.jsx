@@ -36,6 +36,7 @@ import {
   CheckCircle,
   LogOut,
   Trash2,
+  Download,
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import PostCard from "../components/post/PostCard";

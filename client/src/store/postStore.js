@@ -17,18 +17,55 @@ const usePostStore = create((set, get) => ({
   hasMoreGroupMap: {},
   singlePost: null,
 
-  // Add new state for category filtering
-  currentCategories: [], // Track current selected categories
-  isFilterActive: false, // Track if we're filtering by categories
+  // Category pagination maps - similar to group maps
+  categoryPostMap: {}, // { "all": [...posts], "college": [...posts], "krishna": [...posts] }
+  categoryPageMap: {}, // { "all": 2, "college": 1, "krishna": 3 }
+  hasMoreCategoryMap: {}, // { "all": true, "college": false, "krishna": true }
 
-  // Reset public pagination state
+  // Current active category (initially null to force first load)
+  currentCategory: null,
+
+  // Helper to get category key
+  getCategoryKey: (categories) => {
+    if (!categories || categories.length === 0) return "all";
+    return categories.sort().join(","); // Sort to ensure consistent keys
+  },
+
+  // Reset only public posts pagination (keep category maps intact)
   resetPagination: () => {
     set({
       publicPosts: [],
-      currentPage: 0, // Reset to 0 to match your existing logic
+      currentPage: 0,
       hasMore: true,
-      currentCategories: [],
-      isFilterActive: false,
+    });
+  },
+
+  // Reset specific category pagination
+  resetCategoryPagination: (categoryKey) => {
+    const { categoryPostMap, categoryPageMap, hasMoreCategoryMap } = get();
+
+    set({
+      categoryPostMap: {
+        ...categoryPostMap,
+        [categoryKey]: [],
+      },
+      categoryPageMap: {
+        ...categoryPageMap,
+        [categoryKey]: 0,
+      },
+      hasMoreCategoryMap: {
+        ...hasMoreCategoryMap,
+        [categoryKey]: true,
+      },
+    });
+  },
+
+  // Reset all category maps
+  resetAllCategoryPagination: () => {
+    set({
+      categoryPostMap: {},
+      categoryPageMap: {},
+      hasMoreCategoryMap: {},
     });
   },
 
@@ -41,96 +78,128 @@ const usePostStore = create((set, get) => ({
     });
   },
 
-  // ✅ Fetch public posts with pagination (your existing method)
+  // ✅ Updated fetchPublicPosts to use category maps
   fetchPublicPosts: async () => {
+    return get().fetchPostsByCategories([], false);
+  },
+
+  // ✅ Updated fetchPostsByCategories with pagination maps
+  fetchPostsByCategories: async (categories, forceRefresh = false) => {
     const {
-      currentPage,
       limit,
-      publicPosts,
-      hasMore,
       loadingPosts,
-      isFilterActive,
+      categoryPostMap,
+      categoryPageMap,
+      hasMoreCategoryMap,
+      getCategoryKey,
     } = get();
+
+    const categoryKey = getCategoryKey(categories);
+
+    // Get current state for this category
+    const currentPosts = categoryPostMap[categoryKey] || [];
+    const currentPage = categoryPageMap[categoryKey] || 0;
+    const hasMore = hasMoreCategoryMap[categoryKey] ?? true;
 
     if (!hasMore || loadingPosts) return;
 
-    const alreadyFetchedPosts = publicPosts.length;
+    // Check if we need to fetch more data
+    const alreadyFetchedPosts = currentPosts.length;
     const expectedPosts = (currentPage + 1) * limit;
-    // If we already have enough posts for the next page, skip fetching
-    if (alreadyFetchedPosts >= expectedPosts) return;
 
-    set({ loadingPosts: true });
+    // If we already have enough posts for the next page and not forcing refresh, skip fetching
+    if (alreadyFetchedPosts >= expectedPosts && !forceRefresh) {
+      // Update publicPosts with cached data if switching categories
+      if (get().currentCategory !== categoryKey) {
+        set({
+          publicPosts: currentPosts,
+          currentCategory: categoryKey,
+        });
+      }
+      return;
+    }
+
+    set({ loadingPosts: true, currentCategory: categoryKey });
 
     try {
-      const nextPage = currentPage + 1;
-      const res = await api.get(
-        `/posts/public?page=${nextPage}&limit=${limit}`
-      );
+      const nextPage = forceRefresh ? 1 : currentPage + 1;
+      let res;
+
+      if (categoryKey === "all") {
+        res = await api.get(`/posts/public?page=${nextPage}&limit=${limit}`);
+      } else {
+        const categoriesParam = categories.join(",");
+        res = await api.get(
+          `/posts/categories?categories=${categoriesParam}&page=${nextPage}&limit=${limit}`
+        );
+      }
+
       const newPosts = res.data;
+      const updatedPosts = forceRefresh
+        ? newPosts
+        : [...currentPosts, ...newPosts];
+
       set({
-        publicPosts: [...publicPosts, ...newPosts],
-        hasMore: newPosts.length === limit,
+        // Update category maps
+        categoryPostMap: {
+          ...categoryPostMap,
+          [categoryKey]: updatedPosts,
+        },
+        categoryPageMap: {
+          ...categoryPageMap,
+          [categoryKey]: nextPage,
+        },
+        hasMoreCategoryMap: {
+          ...hasMoreCategoryMap,
+          [categoryKey]: newPosts.length === limit,
+        },
+        // Update current view
+        publicPosts: updatedPosts,
         currentPage: nextPage,
-        // Reset category state when fetching all posts
-        currentCategories: [],
-        isFilterActive: false,
+        hasMore: newPosts.length === limit,
       });
     } catch (err) {
-      console.error("Failed to fetch public posts:", err);
+      console.error("Failed to fetch posts by categories:", err);
+      if (categoryKey !== "all") {
+        toast.error(`Failed to load ${categories.join(", ")} posts`);
+      }
     } finally {
       set({ loadingPosts: false });
     }
   },
 
-  // ✅ New method: Fetch posts by categories
-  fetchPostsByCategories: async (categories, resetPosts = false) => {
-    const { currentPage, limit, publicPosts, hasMore, loadingPosts } = get();
+  // ✅ Method to switch category (uses cached data if available)
+  switchToCategory: async (categories, forceRefresh = false) => {
+    const { getCategoryKey, categoryPostMap, currentCategory } = get();
+    const categoryKey = getCategoryKey(categories);
 
-    if (!hasMore || loadingPosts) return;
-
-    // If resetting or switching categories, start fresh
+    // If already on this category and not forcing refresh, do nothing
+    // But allow first mount (when currentCategory is null)
     if (
-      resetPosts ||
-      JSON.stringify(get().currentCategories) !== JSON.stringify(categories)
+      currentCategory === categoryKey &&
+      !forceRefresh &&
+      currentCategory !== null
     ) {
-      set({
-        publicPosts: [],
-        currentPage: 0,
-        hasMore: true,
-        currentCategories: categories,
-        isFilterActive: true,
-      });
+      return;
     }
 
-    const { currentPage: updatedPage, publicPosts: updatedPosts } = get();
-    const alreadyFetchedPosts = updatedPosts.length;
-    const expectedPosts = (updatedPage + 1) * limit;
-
-    if (alreadyFetchedPosts >= expectedPosts && !resetPosts) return;
-
-    set({ loadingPosts: true });
-
-    try {
-      const nextPage = updatedPage + 1;
-      const categoriesParam = categories.join(",");
-      const res = await api.get(
-        `/posts/categories?categories=${categoriesParam}&page=${nextPage}&limit=${limit}`
-      );
-      const newPosts = res.data;
+    // If we have cached data for this category, use it immediately
+    const cachedPosts = categoryPostMap[categoryKey];
+    if (cachedPosts && cachedPosts.length > 0 && !forceRefresh) {
+      const cachedPage = get().categoryPageMap[categoryKey] || 0;
+      const cachedHasMore = get().hasMoreCategoryMap[categoryKey] ?? true;
 
       set({
-        publicPosts: resetPosts ? newPosts : [...updatedPosts, ...newPosts],
-        hasMore: newPosts.length === limit,
-        currentPage: nextPage,
-        currentCategories: categories,
-        isFilterActive: true,
+        publicPosts: cachedPosts,
+        currentPage: cachedPage,
+        hasMore: cachedHasMore,
+        currentCategory: categoryKey,
       });
-    } catch (err) {
-      console.error("Failed to fetch posts by categories:", err);
-      toast.error(`Failed to load ${categories.join(", ")} posts`);
-    } finally {
-      set({ loadingPosts: false });
+      return;
     }
+
+    // Otherwise fetch fresh data
+    await get().fetchPostsByCategories(categories, forceRefresh);
   },
 
   // ✅ Your existing fetchGroupPosts method (unchanged)
@@ -188,9 +257,23 @@ const usePostStore = create((set, get) => ({
           publicPosts: state.publicPosts.map((post) =>
             post._id === postId ? updatedPost : post
           ),
-          groupPosts: state.groupPosts.map((post) =>
-            post._id === postId ? updatedPost : post
+          // Update all category maps
+          categoryPostMap: Object.keys(state.categoryPostMap).reduce(
+            (acc, key) => {
+              acc[key] = state.categoryPostMap[key].map((post) =>
+                post._id === postId ? updatedPost : post
+              );
+              return acc;
+            },
+            {}
           ),
+          // Update group maps
+          groupPostMap: Object.keys(state.groupPostMap).reduce((acc, key) => {
+            acc[key] = state.groupPostMap[key].map((post) =>
+              post._id === postId ? updatedPost : post
+            );
+            return acc;
+          }, {}),
         }));
       }
     } catch (err) {
@@ -206,15 +289,12 @@ const usePostStore = create((set, get) => ({
     try {
       const res = await api.post("/posts/upload", postData);
       const newPost = res.data;
-      console.log(postData.groupId, isGroupPost);
 
       if (isGroupPost && postData.groupId) {
-        console.log("updated");
         const { groupPostMap } = get();
         const groupId = postData.groupId;
-
         const existingPosts = groupPostMap[groupId] || [];
-        console.log(existingPosts);
+
         set((state) => ({
           groupPostMap: {
             ...groupPostMap,
@@ -222,11 +302,35 @@ const usePostStore = create((set, get) => ({
           },
         }));
       } else {
-        // Add to public posts regardless of current filter
-        // The user should see their new post immediately
-        set((state) => ({
-          publicPosts: [newPost, ...state.publicPosts],
-        }));
+        // Add to current public posts and all relevant category caches
+        set((state) => {
+          const updatedCategoryPostMap = { ...state.categoryPostMap };
+
+          // Add to "all" category
+          if (updatedCategoryPostMap["all"]) {
+            updatedCategoryPostMap["all"] = [
+              newPost,
+              ...updatedCategoryPostMap["all"],
+            ];
+          }
+
+          // Add to specific categories if the post belongs to them
+          if (postData.categories && Array.isArray(postData.categories)) {
+            postData.categories.forEach((category) => {
+              if (updatedCategoryPostMap[category]) {
+                updatedCategoryPostMap[category] = [
+                  newPost,
+                  ...updatedCategoryPostMap[category],
+                ];
+              }
+            });
+          }
+
+          return {
+            publicPosts: [newPost, ...state.publicPosts],
+            categoryPostMap: updatedCategoryPostMap,
+          };
+        });
       }
 
       toast.success("Post uploaded successfully");
@@ -238,32 +342,35 @@ const usePostStore = create((set, get) => ({
     }
   },
 
-  // ✅ Your existing toggleLikePost method (unchanged)
+  // ✅ Updated toggleLikePost method to update all maps
   toggleLikePost: async (postId) => {
-    console.log("not even callede");
     try {
       const res = await api.post(`/posts/${postId}/like`);
       const updatedPost = res.data.updatedPost;
-      console.log(updatedPost, "not data");
-      const { publicPosts, groupPostMap } = get();
 
-      // Update public posts
-      const updatedPublicPosts = publicPosts.map((post) =>
-        post._id === postId ? updatedPost : post
-      );
-
-      // Update all group maps that might contain the post
-      const updatedGroupPostMap = {};
-      for (const groupId in groupPostMap) {
-        updatedGroupPostMap[groupId] = groupPostMap[groupId].map((post) =>
+      set((state) => ({
+        // Update current public posts
+        publicPosts: state.publicPosts.map((post) =>
           post._id === postId ? updatedPost : post
-        );
-      }
-
-      set({
-        publicPosts: updatedPublicPosts,
-        groupPostMap: updatedGroupPostMap,
-      });
+        ),
+        // Update all category maps
+        categoryPostMap: Object.keys(state.categoryPostMap).reduce(
+          (acc, key) => {
+            acc[key] = state.categoryPostMap[key].map((post) =>
+              post._id === postId ? updatedPost : post
+            );
+            return acc;
+          },
+          {}
+        ),
+        // Update all group maps
+        groupPostMap: Object.keys(state.groupPostMap).reduce((acc, key) => {
+          acc[key] = state.groupPostMap[key].map((post) =>
+            post._id === postId ? updatedPost : post
+          );
+          return acc;
+        }, {}),
+      }));
     } catch (err) {
       console.error("Failed to like/unlike post:", err);
     }
@@ -278,49 +385,55 @@ const usePostStore = create((set, get) => ({
     }
   },
 
-  // ✅ Updated deleteUploadedPost method to handle both public and group posts
+  // ✅ Updated deleteUploadedPost method to handle all maps
   deleteUploadedPost: async (postId) => {
-    console.log(postId);
-    let previousPublicPosts, previousPosts, previousGroupPostMap;
+    let previousState;
 
     set((state) => {
-      previousPublicPosts = state.publicPosts;
-      previousPosts = state.posts;
-      previousGroupPostMap = state.groupPostMap;
-
-      // Remove from all possible locations
-      const updatedGroupPostMap = {};
-      for (const groupId in state.groupPostMap) {
-        updatedGroupPostMap[groupId] = state.groupPostMap[groupId].filter(
-          (post) => post._id !== postId
-        );
-      }
+      previousState = {
+        publicPosts: state.publicPosts,
+        posts: state.posts,
+        categoryPostMap: state.categoryPostMap,
+        groupPostMap: state.groupPostMap,
+      };
 
       return {
         publicPosts: state.publicPosts.filter((post) => post._id !== postId),
         posts: state.posts.filter((post) => post._id !== postId),
-        groupPostMap: updatedGroupPostMap,
+        // Remove from all category maps
+        categoryPostMap: Object.keys(state.categoryPostMap).reduce(
+          (acc, key) => {
+            acc[key] = state.categoryPostMap[key].filter(
+              (post) => post._id !== postId
+            );
+            return acc;
+          },
+          {}
+        ),
+        // Remove from all group maps
+        groupPostMap: Object.keys(state.groupPostMap).reduce((acc, key) => {
+          acc[key] = state.groupPostMap[key].filter(
+            (post) => post._id !== postId
+          );
+          return acc;
+        }, {}),
       };
     });
 
     try {
       const res = await api.delete(`/posts/${postId}`);
-      if (res.data.success || res.status == 200) {
+      if (res.data.success || res.status === 200) {
         toast.success("Post deleted successfully");
       }
     } catch (err) {
-      console.error("Delete failed, restoring post", err);
-      // Rollback
-      set({
-        publicPosts: previousPublicPosts,
-        posts: previousPosts,
-        groupPostMap: previousGroupPostMap,
-      });
+      console.error("Delete failed, restoring state", err);
+      // Rollback to previous state
+      set(previousState);
       toast.error("Failed to delete post. Please try again.");
     }
   },
 
-  // ✅ Your existing fetchUploadedPosts method (unchanged)
+  // ✅ Your existing methods (unchanged)
   fetchUploadedPosts: async () => {
     try {
       const res = await api.get("/posts/my-uploads");
@@ -330,7 +443,6 @@ const usePostStore = create((set, get) => ({
     }
   },
 
-  // ✅ Your existing fetchTaggedPosts method (unchanged)
   fetchTaggedPosts: async () => {
     try {
       const res = await api.get("/posts/tagged");
@@ -340,9 +452,7 @@ const usePostStore = create((set, get) => ({
     }
   },
 
-  // ✅ Your existing fetchSinglePost method (unchanged)
   fetchSinglePost: async (postId) => {
-    console.log("calling");
     set({ loadingPosts: true });
     try {
       const res = await api.get(`/posts/taggedpost/${postId}`);
@@ -354,20 +464,39 @@ const usePostStore = create((set, get) => ({
     }
   },
 
-  // ✅ Helper method to check current filter state
+  // ✅ Helper method to get current filter state
   getCurrentFilterState: () => {
-    const { isFilterActive, currentCategories } = get();
-    return { isFilterActive, currentCategories };
+    const { currentCategory } = get();
+    return {
+      isFilterActive: currentCategory !== "all" && currentCategory !== null,
+      currentCategories:
+        currentCategory === "all" || currentCategory === null
+          ? []
+          : currentCategory.split(","),
+    };
   },
 
-  // ✅ Method to load more posts based on current state
+  // ✅ Method to load more posts based on current category
   loadMorePosts: async () => {
-    const { isFilterActive, currentCategories } = get();
+    const { currentCategory } = get();
 
-    if (isFilterActive && currentCategories.length > 0) {
-      await get().fetchPostsByCategories(currentCategories, false);
+    if (currentCategory === "all" || currentCategory === null) {
+      await get().fetchPostsByCategories([], false);
     } else {
-      await get().fetchPublicPosts();
+      const categories = currentCategory.split(",");
+      await get().fetchPostsByCategories(categories, false);
+    }
+  },
+
+  // ✅ Method to refresh current category
+  refreshCurrentCategory: async () => {
+    const { currentCategory } = get();
+
+    if (currentCategory === "all" || currentCategory === null) {
+      await get().fetchPostsByCategories([], true);
+    } else {
+      const categories = currentCategory.split(",");
+      await get().fetchPostsByCategories(categories, true);
     }
   },
 }));
