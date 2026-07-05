@@ -281,7 +281,7 @@ exports.generateSignature = async (req, res) => {
 };
 
 exports.getPublicPosts = async (req, res) => {
-  const userId = req.user.id;
+
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 12;
   const skip = (page - 1) * limit;
