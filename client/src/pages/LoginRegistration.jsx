@@ -1,32 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { Loader2 } from "lucide-react";
 import useAuthStore from "../store/authStore";
 
-// The premium, single-element abstract flame icon from your dashboard brand
-const PremiumFlameIcon = ({ className = "w-12 h-12" }) => (
-  <svg
-    viewBox="0 0 100 100"
-    className={className}
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <defs>
-      <linearGradient id="premiumOrange" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#FF8F3d" />
-        <stop offset="100%" stopColor="#D34A00" />
-      </linearGradient>
-    </defs>
-    <path
-      d="M50 5C50 5 78 36 78 64C78 82 65 95 50 95C35 95 22 82 22 64C22 36 50 5Z"
-      fill="url(#premiumOrange)"
-    />
-  </svg>
-);
+const dateStamp = () =>
+  new Date().toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
 const LoginPage = () => {
   const googleLogin = useAuthStore((s) => s.googleLogin);
   const [isLoading, setIsLoading] = useState(false);
+  const [btnWidth, setBtnWidth] = useState(320);
+  const cardRef = useRef(null);
+
+  // Keep the Google button pixel-matched to the card width so it never
+  // looks off-center, on any screen size.
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const el = cardRef.current;
+    const update = () => setBtnWidth(Math.min(el.offsetWidth - 64, 320));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
@@ -41,54 +42,115 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#0D0D0D] text-neutral-200 antialiased relative overflow-hidden">
-      {/* Subtle architectural grid/light texture matching the premium dashboard */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,_#141414_0%,_#0D0D0D_100%)]" />
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-[#10131F] text-[#F3ECDD] overflow-hidden">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
-      {/* Main Container - Balanced & Intentional Spacing */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center items-center px-6">
-        <div className="w-full max-w-sm flex flex-col items-center">
-          
-          {/* Brand Header */}
-          <div className="flex flex-col items-center text-center mb-12 space-y-4">
-            <PremiumFlameIcon className="w-14 h-14" />
-            
-            <h1 className="text-3xl font-light tracking-wide text-white font-sans">
-              Campus<span className="text-[#FF6B1A] font-semibold">Dairies</span>
-            </h1>
-            
-            <p className="text-sm text-neutral-500 max-w-xs tracking-tight">
-              Dive into campus stories & moments. An intentional creative space.
-            </p>
-          </div>
+        .font-display { font-family: 'Fraunces', Georgia, serif; }
+        .font-mono-stamp { font-family: 'IBM Plex Mono', monospace; }
 
-          {/* Minimalist Action Box */}
-          <div className="w-full bg-[#141414] border border-neutral-800/60 p-8 rounded-xl shadow-2xl flex flex-col items-center space-y-6">
+        @keyframes drift {
+          0%, 100% { transform: translateY(0) translateX(0); opacity: .35; }
+          50% { transform: translateY(-14px) translateX(6px); opacity: .9; }
+        }
+        .firefly { animation: drift 6s ease-in-out infinite; }
+
+        .ruled-paper {
+          background-image: repeating-linear-gradient(
+            to bottom,
+            transparent 0px,
+            transparent 31px,
+            rgba(243, 236, 221, 0.07) 32px
+          );
+        }
+        .margin-rule {
+          position: relative;
+        }
+        .margin-rule::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: 64px;
+          width: 1px;
+          background: rgba(217, 123, 123, 0.35);
+        }
+        @media (max-width: 1023px) {
+          .margin-rule::before { left: 28px; }
+        }
+      `}</style>
+
+      {/* Left: brand / journal panel */}
+      <div className="relative flex-1 lg:flex-[1.15] ruled-paper margin-rule px-8 sm:px-14 lg:px-20 py-14 lg:py-0 flex flex-col justify-center overflow-hidden border-b lg:border-b-0 lg:border-r border-white/5">
+        <span className="firefly absolute w-1.5 h-1.5 rounded-full bg-[#E3A857]" style={{ top: "20%", left: "72%", animationDelay: "0s" }} />
+        <span className="firefly absolute w-1 h-1 rounded-full bg-[#E3A857]" style={{ top: "62%", left: "84%", animationDelay: "1.4s" }} />
+        <span className="firefly absolute w-1.5 h-1.5 rounded-full bg-[#E3A857]" style={{ top: "78%", left: "60%", animationDelay: "2.8s" }} />
+        <span className="firefly absolute w-1 h-1 rounded-full bg-[#E3A857]" style={{ top: "38%", left: "90%", animationDelay: "4s" }} />
+
+        <p className="font-mono-stamp text-[11px] tracking-[0.25em] uppercase text-[#9098C2] mb-5 pl-2">
+          {dateStamp()} — Entry No. 001
+        </p>
+        <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl leading-[0.95] pl-2 font-semibold">
+          Campus
+          <br />
+          Diaries
+        </h1>
+        <p className="font-display italic mt-6 max-w-sm text-[#9098C2] text-base leading-relaxed pl-2">
+          "Every quad has a story. Every 2am walk, a footnote."
+        </p>
+        <p className="mt-8 text-sm text-[#6b7094] pl-2">
+          Dive into campus stories &amp; moments.
+        </p>
+      </div>
+
+      {/* Right: login panel */}
+      <div className="relative flex-1 flex items-center justify-center px-6 py-16 bg-[#0B0E1A]">
+        <div
+          ref={cardRef}
+          className="relative w-full max-w-[360px] bg-[#F3ECDD] text-[#10131F] rounded-sm shadow-2xl px-8 py-10"
+        >
+          {/* folded corner */}
+          <div
+            className="absolute top-0 right-0 w-6 h-6 bg-black/10"
+            style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)" }}
+          />
+
+          <p className="font-mono-stamp text-[10px] tracking-[0.2em] uppercase text-[#9098C2] mb-2">
+            Sign in
+          </p>
+          <h2 className="font-display text-2xl mb-8 font-semibold">
+            Pick up your pen.
+          </h2>
+
+          <div className="flex flex-col items-center gap-5">
             <div className="w-full flex justify-center">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
                 onError={() => console.log("Login Failed")}
-                theme="filled_black" 
+                theme="filled_black"
                 shape="pill"
-                size="large"
                 text="continue_with"
+                width={btnWidth}
               />
             </div>
 
             {isLoading && (
-              <div className="flex items-center space-x-2 text-xs text-[#FF6B1A] animate-pulse">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Connecting securely...</span>
+              <div className="flex items-center gap-2 text-sm text-[#5a5f7a]">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Signing you in...</span>
               </div>
             )}
           </div>
-        </div>
-      </div>
 
-      {/* Clean, minimalist footer placeholder */}
-      <footer className="absolute bottom-6 left-0 right-0 text-center text-xs text-neutral-600 tracking-wider font-mono">
-        © 2026 CAMPUSDAIRIES. ALL RIGHTS RESERVED.
-      </footer>
+          <p className="mt-10 text-xs text-[#8b8fa8] leading-relaxed">
+            By continuing, you agree to jot only true stories (mostly).
+          </p>
+        </div>
+
+        <footer className="absolute bottom-6 text-xs text-[#4a4f6a]">
+          © 2025 CampusDiaries. All rights reserved.
+        </footer>
+      </div>
     </div>
   );
 };
