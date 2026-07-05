@@ -11,47 +11,47 @@ import { Toaster } from "react-hot-toast";
 
 // Lazy-loaded pages with better chunking
 const LoginRegistration = lazy(() =>
-  import("./pages/LoginRegistration").then((module) => ({
+  import("./pages/LoginRegistration/index").then((module) => ({
     default: module.default,
-  }))
+  })),
 );
 const HomePage = lazy(() =>
   import("./pages/HomePage").then((module) => ({
     default: module.default,
-  }))
+  })),
 );
 const GroupsPage = lazy(() =>
   import("./pages/GroupPage").then((module) => ({
     default: module.default,
-  }))
+  })),
 );
 const GroupChatPage = lazy(() =>
   import("./pages/GroupChat").then((module) => ({
     default: module.default,
-  }))
+  })),
 );
 const Profile = lazy(() =>
   import("./pages/ProfilePage").then((module) => ({
     default: module.default,
-  }))
+  })),
 );
 const NotFound = lazy(() =>
   import("./pages/NotFound").then((module) => ({
     default: module.default,
-  }))
+  })),
 );
 const NotificationsPage = lazy(() =>
   import("./pages/NotificationPage").then((module) => ({
     default: module.default,
-  }))
+  })),
 );
 const SinglePostDisplay = lazy(() =>
   import("./pages/SinglePostDisplay").then((module) => ({
     default: module.default,
-  }))
+  })),
 );
 const MessagePage = lazy(() =>
-  import("./pages/MessagePage").then((module) => ({ default: module.default }))
+  import("./pages/MessagePage").then((module) => ({ default: module.default })),
 );
 // Non-lazy components
 import Navbar from "./components/navbar/Navbar";
@@ -92,7 +92,7 @@ const ConditionalCommentModal = memo(
   ({ showCommentModal, closeCommentModal }) => {
     if (!showCommentModal) return null;
     return <CommentModal onClose={closeCommentModal} />;
-  }
+  },
 );
 
 // Memoized Navbar Component
@@ -131,7 +131,7 @@ const App = () => {
   const currentPath = useMemo(() => location.pathname, [location.pathname]);
   const shouldShowNavbar = useMemo(
     () => isLoggedIn && currentPath !== "/login",
-    [isLoggedIn, currentPath]
+    [isLoggedIn, currentPath],
   );
 
   // Memoized authenticated routes
@@ -140,7 +140,7 @@ const App = () => {
       authenticatedRoutes.map((route) => (
         <Route key={route.path} path={route.path} element={route.element} />
       )),
-    []
+    [],
   );
 
   // Callbacks for socket events
@@ -148,14 +148,14 @@ const App = () => {
     (users) => {
       setOnlineUsers(users);
     },
-    [setOnlineUsers]
+    [setOnlineUsers],
   );
 
   const handleNewNotification = useCallback(
     (notification) => {
       addNewNotification(notification);
     },
-    [addNewNotification]
+    [addNewNotification],
   );
 
   const handleCloseCommentModal = useCallback(() => {
