@@ -314,7 +314,7 @@ exports.getPublicPosts = async (req, res) => {
     res.status(200).json(enrichedPosts);
   } catch (err) {
     console.error("Error fetching public posts:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error",message:err });
   }
 };
 
