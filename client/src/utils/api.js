@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://campus-dairies.onrender.com/api", // or your production URL
+  baseURL: "https://campus-dairies-production.up.railway.app/api", // or your production URL
   withCredentials: true,
 });
 
