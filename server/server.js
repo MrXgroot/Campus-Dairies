@@ -18,11 +18,14 @@ const messageWallRoutes = require("./routes/messageWallRoutes");
 const app = express();
 const server = http.createServer(app); // ✅ Create custom HTTP server
 const initSocketServer = require("./socket");
-
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://campus-dairies.vercel.app",
+];
 // ✅ Socket.io setup
 const io = new Server(server, {
   cors: {
-    origin: "https://campus-dairies.vercel.app",
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   },
@@ -41,7 +44,7 @@ app.set("io", io);
 // Middlewares
 app.use(
   cors({
-    origin: "https://campus-dairies.vercel.app",
+    origin: allowedOrigins,
     credentials: true,
   })
 );
