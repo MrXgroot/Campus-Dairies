@@ -27,13 +27,15 @@ const enrichPost = (post, userId) => {
     groupId: post.groupId,
 
     likesCount: post.likes?.length || 0,
-    isLiked: post.likes?.some((id) => id.toString() === userId),
-
+      isLiked: userId
+      ? post.likes?.some((id) => id.toString() === userId)
+      : false,
     commentCount: post.commentCount || 0,
 
     // Reports
-    isReported: post.reports?.some((id) => id.toString() === userId),
-
+    isReported: userId
+      ? post.reports?.some((id) => id.toString() === userId)
+      : false,
     latestComment: latestComment
       ? {
           text: latestComment.text,
@@ -281,7 +283,7 @@ exports.generateSignature = async (req, res) => {
 };
 
 exports.getPublicPosts = async (req, res) => {
-  const userId = req.user.id;
+const userId = req.user?.id || null;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 12;
   const skip = (page - 1) * limit;
@@ -314,7 +316,7 @@ exports.getPublicPosts = async (req, res) => {
     res.status(200).json(enrichedPosts);
   } catch (err) {
     console.error("Error fetching public posts:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error",message:err });
   }
 };
 

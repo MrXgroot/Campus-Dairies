@@ -22,7 +22,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 // Existing routes
 router.get("/my-uploads", authMiddleware, getMyPosts);
 router.get("/tagged", authMiddleware, getTaggedPosts);
-router.get("/public", authMiddleware, getPublicPosts);
+router.get("/public",  getPublicPosts);
 router.post("/:id/like", authMiddleware, toggleLikePost);
 router.get("/group/:id", authMiddleware, getGroupPosts);
 router.post("/upload", authMiddleware, uploadPost);
