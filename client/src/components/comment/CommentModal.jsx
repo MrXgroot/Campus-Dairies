@@ -38,7 +38,7 @@ const CommentModal = ({ isOpen, onClose }) => {
           getComments(currentPost);
         }
       },
-      { threshold: 1.0 }
+      { threshold: 1.0 },
     );
 
     if (observerRef.current) observer.observe(observerRef.current);
@@ -144,7 +144,7 @@ const CommentModal = ({ isOpen, onClose }) => {
                         handleReply(
                           comment._id,
                           comment.user.name,
-                          comment.user._id
+                          comment.user._id,
                         )
                       }
                       className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
@@ -227,7 +227,7 @@ const CommentModal = ({ isOpen, onClose }) => {
           <div className="flex items-center gap-3">
             <img
               src={
-                user.avatar ||
+                user?.avatar ||
                 "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=32&h=32&fit=crop&crop=face&round=true"
               }
               alt="Your avatar"

@@ -1,7 +1,5 @@
 import { io } from "socket.io-client";
 
-export const socket = io("https://campus-dairies.onrender.com", {
+export const socket = io(import.meta.env.VITE_SOCKET_URL, {
   withCredentials: true,
 });
-// http://localhost:3000
-// https://campus-dairies.onrender.com

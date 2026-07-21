@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import api from "../utils/api";
-
 const useAuthStore = create((set) => ({
   user: null,
   token: localStorage.getItem("token") || "",
@@ -22,12 +21,10 @@ const useAuthStore = create((set) => ({
   },
 
   googleLogin: async (googleToken) => {
-    console.log(googleToken);
     set({ isLoading: true });
     try {
       const res = await api.post("/auth/google", { token: googleToken });
       const { user, token } = res.data;
-      console.log(token, res);
       localStorage.setItem("token", token);
       set({ user, token, isLoggedIn: true });
     } catch (err) {
