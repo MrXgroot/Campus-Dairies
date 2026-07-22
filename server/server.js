@@ -60,7 +60,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/messageWall", messageWallRoutes);
 
-app.get("/", (req, res) => {
+app.get("/health", (req, res) => {
   res.send("Backend is alive 🚀");
 });
 
