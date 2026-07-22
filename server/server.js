@@ -59,6 +59,12 @@ app.use("/api/users", userRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/messageWall", messageWallRoutes);
+
+app.get("/", (req, res) => {
+  res.send("Backend is alive 🚀");
+});
+
+
 const PORT = process.env.PORT || 3000;
 connectDb()
   .then(() => {
